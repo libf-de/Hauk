@@ -48,6 +48,7 @@ public enum Constants {
     public static final Preference<NightModeStyle> PREF_NIGHT_MODE = new Preference.Enum<>("nightMode", NightModeStyle.FOLLOW_SYSTEM);
     public static final Preference<Boolean> PREF_CONFIRM_STOP = new Preference.Boolean("confirmStop", true);
     public static final Preference<Boolean> PREF_HIDE_LOGO = new Preference.Boolean("hideLogo", false);
+    public static final Preference<Boolean> PREF_SHARE_NAVIGATION = new Preference.Boolean("shareNavigation", false);
 
     @Deprecated // Use PREF_SERVER_ENCRYPTED instead
     public static final Preference<String> PREF_SERVER = new Preference.String("server", "");
@@ -108,6 +109,10 @@ public enum Constants {
     public static final String PACKET_PARAM_INTERVAL = "int";
     public static final String PACKET_PARAM_LATITUDE = "lat";
     public static final String PACKET_PARAM_LONGITUDE = "lon";
+    public static final String PACKET_PARAM_NAV_DISTANCE = "ndst";
+    public static final String PACKET_PARAM_NAV_END = "nend";
+    public static final String PACKET_PARAM_NAV_ETA = "neta";
+    public static final String PACKET_PARAM_NAV_ROUTE = "nrt";
     public static final String PACKET_PARAM_NICKNAME = "nic";
     public static final String PACKET_PARAM_PASSWORD = "pwd";
     public static final String PACKET_PARAM_PROVIDER_ACCURACY = "prv";
@@ -140,4 +145,17 @@ public enum Constants {
     public static final String E2E_KD_FUNCTION = "PBKDF2WithHmacSHA1";
     public static final String E2E_TRANSFORMATION = "AES/CBC/PKCS5Padding";
     public static final String E2E_KEY_SPEC = "AES";
+
+    // Package names of CoMaps builds that expose navigation data, in order of preference. Each one
+    // must also be listed in <queries> and <uses-permission> in AndroidManifest.xml.
+    public static final String[] COMAPS_PACKAGES = {
+            "app.comaps",
+            "app.comaps.fdroid",
+            "app.comaps.google",
+            "app.comaps.huawei",
+            "app.comaps.debug",
+            "app.comaps.fdroid.debug",
+            "app.comaps.google.debug",
+            "app.comaps.huawei.debug"
+    };
 }

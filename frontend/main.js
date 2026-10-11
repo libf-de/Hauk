@@ -9,6 +9,7 @@ const LOC_PROVIDER_COARSE = 1;
 const STATE_LIVE_COLOR = '#d80037';
 const STATE_ROUGH_COLOR = '#ff9c00';
 const STATE_DEAD_COLOR = '#555555';
+const ROUTE_COLOR = '#2a7de1';
 
 const EARTH_DIAMETER_KM = 6371 * 2;
 const HAV_MOD = EARTH_DIAMETER_KM * 1000;
@@ -214,7 +215,7 @@ L.control.radar = function(opts) {
     return new L.control.Radar(opts);
 }
 
-var map, circleLayer, markerLayer;
+var map, routeLayer, circleLayer, markerLayer;
 
 function initMap() {
     // Create a Leaflet map.
@@ -230,6 +231,7 @@ function initMap() {
     }
     L.control.radar({ position: 'topleft' }).addTo(map);
 
+    routeLayer = L.layerGroup().addTo(map);
     circleLayer = L.layerGroup().addTo(map);
     markerLayer = L.layerGroup().addTo(map);
 
@@ -438,7 +440,7 @@ function setNewInterval(expire, interval, serverTime) {
         }
 
         // Start incremental fetch
-        getJSON("./api/fetch.php?id=" + id + "&since=" + getOldestPointTime(), function(data) {
+        getJSON("./api/fetch.php?id=" + id + "&since=" + getOldestPointTime() + "&rids=" + getKnownRouteIDs(), function(data) {
             // Recreate the interval timers if the interval or expiration
             // change.
             if (data.expire != expire || data.interval != interval) {
@@ -470,6 +472,18 @@ function getOldestPointTime() {
         }
     }
     return foundTime ? oldestTime : 0;
+}
+
+// Returns a comma-separated list of the IDs of all navigation routes currently
+// drawn on the map, so that the server doesn't send them again.
+function getKnownRouteIDs() {
+    var rids = [];
+    for (var share in shares) {
+        if (shares.hasOwnProperty(share) && shares[share].routeID !== null) {
+            rids.push(shares[share].routeID);
+        }
+    }
+    return encodeURIComponent(rids.join(","));
 }
 
 var noGPS = document.getElementById("searching");
@@ -617,10 +631,12 @@ function processUpdate(data, init) {
             pointPromises.push(Promise.all(promises));
         }
 
-        // Wait for all points to be decrypted.
+        // Wait for all points and the navigation data to be decrypted.
         Promise
-            .all(pointPromises)
-            .then(function(values) {
+            .all([Promise.all(pointPromises), decryptNav(data.nav)])
+            .then(function(results) {
+                var values = results[0];
+                data.nav = results[1];
                 // Parse all points and conver them to floating point values
                 // (all values in the array are currently numbers).
                 var decoder = new TextDecoder("utf-8");
@@ -692,7 +708,9 @@ function processUpdate(data, init) {
                 "points": [],
                 "id": Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
                 "listEntry": listE,
-                "state": "live"
+                "state": "live",
+                "route": null,
+                "routeID": null
             };
         }
 
@@ -730,6 +748,7 @@ function processUpdate(data, init) {
                                         '<span id="velocity-' + shares[user].id + '">0.0</span> ' +
                                         VELOCITY_UNIT.unit +
                                     '</span><span class="offline" id="last-seen-' + shares[user].id + '">' +
+                                    '</span><span class="nav" id="nav-' + shares[user].id + '">' +
                                     '</span>' +
                                 '</p>' +
                             '</div>',
@@ -838,6 +857,19 @@ function processUpdate(data, init) {
         }
     }
 
+    // Update navigation routes, ETAs and remaining distances. Group shares
+    // contain a map of nicknames to navigation data.
+    var navs = {};
+    if (data.type == SHARE_TYPE_ALONE) {
+        navs[""] = data.nav;
+    } else if (data.type == SHARE_TYPE_GROUP && data.nav) {
+        navs = data.nav;
+    }
+    for (var user in shares) {
+        if (!shares.hasOwnProperty(user)) continue;
+        updateNav(user, navs.hasOwnProperty(user) ? navs[user] : null, data.serverTime);
+    }
+
     for (var user in shares) {
         if (!shares.hasOwnProperty(user)) continue;
 
@@ -907,6 +939,110 @@ function setAccuracyCircleColor(circle, color) {
             color: color
         });
     }
+}
+
+// Decrypts the navigation data of an end-to-end encrypted share. Returns a
+// promise that resolves to the decrypted navigation data, or null.
+function decryptNav(nav) {
+    if (!nav) return Promise.resolve(null);
+    var decoder = new TextDecoder("utf-8");
+    var decrypt = function(iv, value) {
+        if (iv === null || iv === undefined || value === null || value === undefined) {
+            return Promise.resolve(null);
+        }
+        return crypto.subtle
+            .decrypt({name: "AES-CBC", iv: byteArray(iv)}, aesKey, byteArray(value))
+            .then(function(buffer) { return decoder.decode(buffer); });
+    };
+    return Promise
+        .all([decrypt(nav.riv, nav.route), decrypt(nav.iv, nav.eta), decrypt(nav.iv, nav.dist)])
+        .then(function(values) {
+            var result = {
+                rid: nav.rid,
+                time: nav.time,
+                eta: values[1] !== null ? parseFloat(values[1]) : null,
+                dist: values[2] !== null ? parseFloat(values[2]) : null
+            };
+            // The route is omitted by the server if we already have it.
+            if (values[0] !== null) result.route = values[0];
+            return result;
+        });
+}
+
+// Draws or removes the navigation route of a user and updates the ETA and
+// remaining distance shown below their marker.
+function updateNav(user, nav, serverTime) {
+    var share = shares[user];
+    var navE = document.getElementById("nav-" + share.id);
+
+    // Navigation data is discarded if the user stopped navigating or has not
+    // sent any updates for a while.
+    if (!nav || nav.time === null || nav.time < serverTime - OFFLINE_TIMEOUT) {
+        if (share.route !== null) routeLayer.removeLayer(share.route);
+        share.route = null;
+        share.routeID = null;
+        if (navE !== null) navE.textContent = "";
+        return;
+    }
+
+    // Draw the route if it is new.
+    if (nav.rid !== null && nav.rid !== share.routeID && typeof nav.route === "string") {
+        if (share.route !== null) routeLayer.removeLayer(share.route);
+        share.route = L.polyline(decodePolyline(nav.route), {color: ROUTE_COLOR, weight: 5, opacity: 0.7, interactive: false}).addTo(routeLayer);
+        share.routeID = nav.rid;
+    }
+
+    if (navE !== null) {
+        var lines = [];
+        if (nav.eta !== null) {
+            var eta = new Date(nav.eta * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+            lines.push(LANG["nav_eta"].split("{{time}}").join(eta));
+        }
+        if (nav.dist !== null) lines.push(formatDistance(nav.dist));
+        navE.textContent = "";
+        for (var i = 0; i < lines.length; i++) {
+            var lineE = document.createElement("span");
+            lineE.textContent = lines[i];
+            navE.appendChild(lineE);
+        }
+    }
+}
+
+// Decodes a route in the Encoded Polyline Algorithm Format into an array of
+// [lat, lon] pairs.
+function decodePolyline(encoded) {
+    var points = [];
+    var index = 0, lat = 0, lon = 0;
+    while (index < encoded.length) {
+        var values = [0, 0];
+        for (var i = 0; i < 2; i++) {
+            var result = 0, shift = 0, b;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            values[i] = (result & 1) ? ~(result >> 1) : (result >> 1);
+        }
+        lat += values[0];
+        lon += values[1];
+        points.push([lat / 1e5, lon / 1e5]);
+    }
+    return points;
+}
+
+// Formats a distance in meters using the unit system of the velocity unit from
+// the config.
+function formatDistance(meters) {
+    var value, unit;
+    if (VELOCITY_UNIT.unit == "mph") {
+        value = meters / 1609.344;
+        unit = "mi";
+    } else {
+        value = meters / 1000;
+        unit = "km";
+    }
+    return (value < 10 ? value.toFixed(1) : Math.round(value)) + " " + unit;
 }
 
 // Calculates the distance between two points on a sphere using the Haversine

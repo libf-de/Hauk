@@ -138,6 +138,12 @@
     <string name="night_mode_system">Folge System-Einstellung</string>
     <string name="prefs_nightMode_title">Nachtmodus</string>
     <string name="prefs_header_appearance">Darstellung</string>
+    <string name="prefs_header_navigation">Navigation</string>
+    <string name="pref_shareNavigation_title">CoMaps-Navigation teilen</string>
+    <string name="pref_shareNavigation_on">Während der Navigation mit CoMaps Route, Ankunftszeit und Restdistanz auf der Karte anzeigen</string>
+    <string name="pref_shareNavigation_off">Keine Navigationsdaten von CoMaps teilen</string>
+    <string name="err_comaps_not_installed">CoMaps ist nicht installiert, oder die installierte Version kann keine Navigationsdaten teilen</string>
+    <string name="err_comaps_permission_denied">Die Berechtigung zum Lesen der CoMaps-Navigationsdaten wurde verweigert</string>
     <string name="tls_validation_none_for_onion">Vertrauensanker und Namen für .onion Adressen nicht prüfen (nicht empfohlen)</string>
     <string name="tls_validation_no_anchor_onion">Vertrauensanker für .onion Adressen nicht prüfen (nicht empfohlen)</string>
     <string name="tls_validation_all">Zertifikat immer überprüfen (empfohlen)</string>

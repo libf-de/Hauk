@@ -4,6 +4,8 @@ import android.content.Context;
 import android.location.Location;
 import android.util.Base64;
 
+import androidx.annotation.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 
@@ -12,6 +14,7 @@ import javax.crypto.Cipher;
 import info.varden.hauk.Constants;
 import info.varden.hauk.R;
 import info.varden.hauk.http.parameter.LocationProvider;
+import info.varden.hauk.navigation.NavigationSnapshot;
 import info.varden.hauk.struct.Session;
 import info.varden.hauk.struct.Version;
 import info.varden.hauk.utils.Log;
@@ -43,8 +46,13 @@ public abstract class LocationUpdatePacket extends Packet {
      * @param ctx      Android application context.
      * @param session  The session for which location is being updated.
      * @param location The updated location data obtained from GNSS/network sensors.
+     * @param nav      The navigation state to attach, or null to not send any navigation data. If
+     *                 the snapshot is inactive, the backend is told that navigation has ended.
+     * @param sendRoute Whether or not to include the route geometry of an active navigation
+     *                  snapshot. Should only be true if the route has changed since it was last
+     *                  sent successfully.
      */
-    protected LocationUpdatePacket(Context ctx, Session session, Location location, LocationProvider accuracy) {
+    protected LocationUpdatePacket(Context ctx, Session session, Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute) {
         super(ctx, session.getServerURL(), session.getConnectionParameters(), Constants.URL_PATH_POST_LOCATION);
         setParameter(Constants.PACKET_PARAM_SESSION_ID, session.getID());
 
@@ -58,6 +66,15 @@ public abstract class LocationUpdatePacket extends Packet {
             // Not all devices provide these parameters:
             if (location.hasSpeed()) setParameter(Constants.PACKET_PARAM_SPEED, String.valueOf(location.getSpeed()));
             if (location.hasAccuracy()) setParameter(Constants.PACKET_PARAM_ACCURACY, String.valueOf(location.getAccuracy()));
+
+            // Navigation data, if any:
+            if (nav != null && nav.isActive()) {
+                setParameter(Constants.PACKET_PARAM_NAV_ETA, String.valueOf(nav.getETA()));
+                setParameter(Constants.PACKET_PARAM_NAV_DISTANCE, String.valueOf(Math.round(nav.getRemainingDistance())));
+                if (sendRoute) setParameter(Constants.PACKET_PARAM_NAV_ROUTE, nav.getEncodedRoute());
+            } else if (nav != null) {
+                setParameter(Constants.PACKET_PARAM_NAV_END, "1");
+            }
         } else {
             // We're using end-to-end encryption - generate an IV and encrypt all parameters.
             try {
@@ -74,6 +91,16 @@ public abstract class LocationUpdatePacket extends Packet {
                 // Not all devices provide these parameters:
                 if (location.hasSpeed()) setParameter(Constants.PACKET_PARAM_SPEED, Base64.encodeToString(cipher.doFinal(String.valueOf(location.getSpeed()).getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
                 if (location.hasAccuracy()) setParameter(Constants.PACKET_PARAM_ACCURACY, Base64.encodeToString(cipher.doFinal(String.valueOf(location.getAccuracy()).getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
+
+                // Navigation data, if any. The end flag carries no information and is not
+                // encrypted.
+                if (nav != null && nav.isActive()) {
+                    setParameter(Constants.PACKET_PARAM_NAV_ETA, Base64.encodeToString(cipher.doFinal(String.valueOf(nav.getETA()).getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
+                    setParameter(Constants.PACKET_PARAM_NAV_DISTANCE, Base64.encodeToString(cipher.doFinal(String.valueOf(Math.round(nav.getRemainingDistance())).getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
+                    if (sendRoute) setParameter(Constants.PACKET_PARAM_NAV_ROUTE, Base64.encodeToString(cipher.doFinal(nav.getEncodedRoute().getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
+                } else if (nav != null) {
+                    setParameter(Constants.PACKET_PARAM_NAV_END, "1");
+                }
             } catch (Exception e) {
                 Log.e("Error was thrown when encrypting location data", e); //NON-NLS
             }

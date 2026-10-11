@@ -21,6 +21,7 @@
     "status_offline": "Offline",
     "control_show_self": "Show my location",
     "last_update_seconds": "{{time}}s ago",
+    "nav_eta": "ETA {{time}}",
     "last_update_minutes": "{{time}}m ago",
     "last_update_hours": "{{time}}h ago",
     "last_update_days": "{{time}}d ago",

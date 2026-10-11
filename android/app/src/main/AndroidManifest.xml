@@ -10,6 +10,27 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Read navigation data (route, ETA) from CoMaps. Keep in sync with Constants.COMAPS_PACKAGES. -->
+    <uses-permission android:name="app.comaps.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.fdroid.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.google.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.huawei.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.debug.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.fdroid.debug.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.google.debug.permission.READ_NAVIGATION_DATA" />
+    <uses-permission android:name="app.comaps.huawei.debug.permission.READ_NAVIGATION_DATA" />
+
+    <queries>
+        <package android:name="app.comaps" />
+        <package android:name="app.comaps.fdroid" />
+        <package android:name="app.comaps.google" />
+        <package android:name="app.comaps.huawei" />
+        <package android:name="app.comaps.debug" />
+        <package android:name="app.comaps.fdroid.debug" />
+        <package android:name="app.comaps.google.debug" />
+        <package android:name="app.comaps.huawei.debug" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"

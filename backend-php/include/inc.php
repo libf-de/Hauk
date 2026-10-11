@@ -18,6 +18,8 @@ const SHARE_TYPE_ALONE = 0;
 const SHARE_TYPE_GROUP = 1;
 
 const SESSION_ID_SIZE = 32;
+const NAV_ROUTE_ID_SIZE = 4;
+const NAV_ROUTE_MAX_LENGTH = 200000;
 const LINK_ID_RAND_BYTES = 32;
 const GROUP_PIN_MIN = 100000;
 const GROUP_PIN_MAX = 999999;
@@ -576,6 +578,20 @@ class GroupShare extends Share {
         return $points;
     }
 
+    // Returns a map of nicknames and the users' corresponding navigation data,
+    // for users who are currently navigating. See Client::getNav().
+    public function getAllNav($knownRouteIDs) {
+        $navs = array();
+        $hosts = $this->getHosts();
+        foreach ($hosts as $nick => $host) {
+            if ($host->exists()) {
+                $nav = $host->getNav($knownRouteIDs);
+                if ($nav !== null) $navs[$nick] = $nav;
+            }
+        }
+        return (object) $navs;
+    }
+
     // Generates a new 6-digit group PIN.
     private function generateGroupPIN() {
         $pin = 0;
@@ -604,7 +620,8 @@ class Client {
                 "targets" => array(),
                 "points" => array(),
                 "encrypted" => 0,
-                "salt" => null
+                "salt" => null,
+                "nav" => null
             );
             // Generate new session IDs for new sessions.
             $this->sessionID = $this->generateSessionID();
@@ -774,6 +791,68 @@ class Client {
             }
             return $newPoints;
         }
+    }
+
+    // Sets the route the user is currently navigating along. $route is an
+    // encoded polyline, or its ciphertext for end-to-end encrypted sessions, in
+    // which case $iv is the IV it was encrypted with. A new route ID is assigned
+    // so that clients know they have to redraw the route. Does not take effect
+    // until save() is called.
+    public function setNavRoute($route, $iv) {
+        $nav = $this->getNavData();
+        $nav["rid"] = bin2hex(openssl_random_pseudo_bytes(NAV_ROUTE_ID_SIZE));
+        $nav["route"] = $route;
+        $nav["riv"] = $iv;
+        $nav["time"] = time();
+        $this->sessionData["nav"] = $nav;
+        return $this;
+    }
+
+    // Sets the estimated time of arrival (UNIX timestamp) and remaining distance
+    // (meters) of the current navigation. For end-to-end encrypted sessions,
+    // these are ciphertexts and $iv is the IV they were encrypted with. Does not
+    // take effect until save() is called.
+    public function setNavProgress($eta, $dist, $iv) {
+        $nav = $this->getNavData();
+        $nav["eta"] = $eta;
+        $nav["dist"] = $dist;
+        $nav["iv"] = $iv;
+        $nav["time"] = time();
+        $this->sessionData["nav"] = $nav;
+        return $this;
+    }
+
+    // Removes all navigation data from the session, e.g. when the user arrived
+    // at their destination. Does not take effect until save() is called.
+    public function clearNav() {
+        $this->sessionData["nav"] = null;
+        return $this;
+    }
+
+    // Returns the navigation data of this session, or null if the user is not
+    // navigating. The route itself is omitted if its route ID is contained in
+    // the $knownRouteIDs array, i.e. the client already has it.
+    public function getNav($knownRouteIDs) {
+        $nav = $this->sessionData["nav"] ?? null;
+        if ($nav === null) return null;
+        if ($nav["rid"] !== null && in_array($nav["rid"], $knownRouteIDs, true)) {
+            unset($nav["route"], $nav["riv"]);
+        }
+        return $nav;
+    }
+
+    // Returns the stored navigation data, or an empty navigation data array if
+    // there is none. Sessions created by older versions have no "nav" key.
+    private function getNavData() {
+        return $this->sessionData["nav"] ?? array(
+            "rid" => null,
+            "route" => null,
+            "riv" => null,
+            "eta" => null,
+            "dist" => null,
+            "iv" => null,
+            "time" => null
+        );
     }
 
     // Generates a random session ID for new sessions.

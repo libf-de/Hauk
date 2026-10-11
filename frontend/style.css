@@ -338,6 +338,16 @@ a:last-child > .store-icon {
     display: none;
 }
 
+/* Navigation ETA and remaining distance, one per line. */
+.marker p > span.nav > span {
+    display: block;
+    padding-top: 2px;
+}
+
+.marker p.dead > span.nav {
+    display: none;
+}
+
 /* Hide the default white box in the top left corner of the marker div. */
 .leaflet-div-icon {
     background: none;

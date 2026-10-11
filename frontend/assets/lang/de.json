@@ -19,6 +19,7 @@
     "last_update_hours": "{{time}}S her",
     "last_update_minutes": "{{time}}M her",
     "last_update_seconds": "{{time}}S her",
+    "nav_eta": "Ank. {{time}}",
     "e2e_unsupported": "Diese Freigabe ist passwortgeschützt. Dem Browser fehlt die Funktionalität solche Freigaben zu öffnen. Bitte mit einem anderen Browser noch einmal probieren.",
     "e2e_unavailable_secure": "Diese Freigabe ist passwortgeschützt. Die Freigabe kann nicht entsperrt werden, da kein HTTPS benutzt wird. Bitte sicherstellen, dass HTTPS benutzt wird, dann noch einmal probieren.",
     "e2e_incorrect": "Das eingegebene Passwort ist falsch. Bitte noch einmal probieren.",

@@ -19,6 +19,8 @@ import info.varden.hauk.http.LocationUpdatePacket;
 import info.varden.hauk.http.ServerException;
 import info.varden.hauk.http.parameter.LocationProvider;
 import info.varden.hauk.manager.StopSharingTask;
+import info.varden.hauk.navigation.ComapsNavigationSource;
+import info.varden.hauk.navigation.NavigationSnapshot;
 import info.varden.hauk.notify.SharingNotification;
 import info.varden.hauk.struct.Share;
 import info.varden.hauk.struct.Version;
@@ -92,6 +94,23 @@ public final class LocationPushService extends Service {
      */
     private boolean connected = true;
 
+    /**
+     * The source of navigation data to attach to location updates, or null if navigation sharing
+     * is disabled or unavailable.
+     */
+    private ComapsNavigationSource navSource = null;
+
+    /**
+     * The ID of the route that was last successfully sent to the backend, or 0 if none.
+     */
+    private int uploadedRouteId = 0;
+
+    /**
+     * Whether or not the backend currently has navigation data for this session that must be
+     * cleared when navigation ends.
+     */
+    private boolean navOnServer = false;
+
     @Override
     public void onCreate() {
         Log.d("Fetching location service"); //NON-NLS
@@ -133,6 +152,12 @@ public final class LocationPushService extends Service {
                 if (!this.listenCoarse.request(this.locMan)) this.listenCoarse = null;
                 if (!this.listenFine.request(this.locMan)) this.listenFine = null;
 
+                // Attach navigation data from CoMaps to location updates if enabled.
+                if (this.navSource == null && new PreferenceManager(this).get(Constants.PREF_SHARE_NAVIGATION)) {
+                    this.navSource = ComapsNavigationSource.create(this);
+                    if (this.navSource != null) this.navSource.start();
+                }
+
             } else {
                 Log.e("Location permission that was granted earlier has been rejected - sharing aborted"); //NON-NLS
             }
@@ -152,6 +177,12 @@ public final class LocationPushService extends Service {
         this.listenFine.onStopped();
         this.locMan.removeUpdates(this.listenFine);
 
+        if (this.navSource != null) {
+            Log.i("Service %s destroyed; stopping navigation data source", this); //NON-NLS
+            this.navSource.stop();
+            this.navSource = null;
+        }
+
         Log.i("Removing callbacks from handler %s", this.handler); //NON-NLS
         this.handler.removeCallbacksAndMessages(null);
         this.gnssActiveTask = new MultiTargetGNSSHandlerProxy();
@@ -169,8 +200,21 @@ public final class LocationPushService extends Service {
      * @param location The location received from the device's location services.
      */
     private void onLocationChanged(Location location, LocationProvider accuracy) {
-        Log.v("Sending location update packet"); //NON-NLS
-        new LocationUpdatePacketImpl(location, accuracy).send();
+        NavigationSnapshot nav = null;
+        boolean sendRoute = false;
+        if (this.navSource != null) {
+            NavigationSnapshot snapshot = this.navSource.getSnapshot();
+            if (snapshot.isActive()) {
+                nav = snapshot;
+                sendRoute = snapshot.getRouteId() != this.uploadedRouteId;
+            } else if (this.navOnServer) {
+                // Navigation has ended; tell the backend to clear the navigation data.
+                nav = snapshot;
+            }
+        }
+
+        Log.v("Sending location update packet, nav=%s, sendRoute=%s", nav, sendRoute); //NON-NLS
+        new LocationUpdatePacketImpl(location, accuracy, nav, sendRoute).send();
     }
 
     @Nullable
@@ -301,8 +345,13 @@ public final class LocationPushService extends Service {
     }
 
     private final class LocationUpdatePacketImpl extends LocationUpdatePacket {
-        private LocationUpdatePacketImpl(Location location, LocationProvider accuracy) {
-            super(LocationPushService.this, LocationPushService.this.share.getSession(), location, accuracy);
+        private final NavigationSnapshot nav;
+        private final boolean sendRoute;
+
+        private LocationUpdatePacketImpl(Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute) {
+            super(LocationPushService.this, LocationPushService.this.share.getSession(), location, accuracy, nav, sendRoute);
+            this.nav = nav;
+            this.sendRoute = sendRoute;
         }
 
         @Override
@@ -320,6 +369,15 @@ public final class LocationPushService extends Service {
                 LocationPushService.this.gnssActiveTask.onServerConnectionRestored();
             }
             super.onSuccess(data, backendVersion);
+
+            // Keep track of the navigation data the backend has received.
+            if (this.nav != null && this.nav.isActive()) {
+                LocationPushService.this.navOnServer = true;
+                if (this.sendRoute) LocationPushService.this.uploadedRouteId = this.nav.getRouteId();
+            } else if (this.nav != null) {
+                LocationPushService.this.navOnServer = false;
+                LocationPushService.this.uploadedRouteId = 0;
+            }
         }
 
         @Override

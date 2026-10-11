@@ -38,7 +38,18 @@ if (!$session->isEncrypted()) {
     // and a location list (l). Each entry in the location list contains a
     // latitude, longitude, timestamp, provider, accuracy and speed, in that
     // order, as an array.
-    $session->addPoint([$lat, $lon, $time, $provider, $accuracy, $speed])->save();
+    $session->addPoint([$lat, $lon, $time, $provider, $accuracy, $speed]);
+
+    // Navigation data is optional. The route is an encoded polyline, which
+    // only consists of characters in the ASCII range 63-126. Invalid navigation
+    // data is ignored rather than rejected so that it never prevents location
+    // updates from being stored.
+    if (isset($_POST["nrt"]) && is_string($_POST["nrt"]) && strlen($_POST["nrt"]) <= NAV_ROUTE_MAX_LENGTH && preg_match('/^[\x3F-\x7E]*$/', $_POST["nrt"])) {
+        $session->setNavRoute($_POST["nrt"], null);
+    }
+    if (isset($_POST["neta"], $_POST["ndst"]) && is_numeric($_POST["neta"]) && is_numeric($_POST["ndst"])) {
+        $session->setNavProgress(floatval($_POST["neta"]), max(0, floatval($_POST["ndst"])), null);
+    }
 
 } else {
     // Input validation cannot be performed for end-to-end encrypted data.
@@ -55,8 +66,21 @@ if (!$session->isEncrypted()) {
     $iv = $_POST["iv"];
 
     // The IV field is prepended to the array to send to the client.
-    $session->addPoint([$iv, $lat, $lon, $time, $provider, $accuracy, $speed])->save();
+    $session->addPoint([$iv, $lat, $lon, $time, $provider, $accuracy, $speed]);
+
+    // Optional navigation data, encrypted with the same IV.
+    if (isset($_POST["nrt"]) && is_string($_POST["nrt"]) && strlen($_POST["nrt"]) <= NAV_ROUTE_MAX_LENGTH) {
+        $session->setNavRoute($_POST["nrt"], $iv);
+    }
+    if (isset($_POST["neta"], $_POST["ndst"]) && is_string($_POST["neta"]) && is_string($_POST["ndst"])) {
+        $session->setNavProgress($_POST["neta"], $_POST["ndst"], $iv);
+    }
 }
+
+// Clients send this flag when navigation has ended.
+if (isset($_POST["nend"])) $session->clearNav();
+
+$session->save();
 
 if ($session->hasExpired()) {
     echo $LANG['session_expired']."\n";

@@ -155,6 +155,14 @@
         <string name="tls_validation_no_anchor_onion">Disable trust anchor validation for .onion hosts (not recommended)</string>
         <string name="tls_validation_none_for_onion">Disable trust anchor and hostname validation for .onion hosts (not recommended)</string>
 
+    <!-- Navigation settings -->
+    <string name="prefs_header_navigation">Navigation</string>
+    <string name="pref_shareNavigation_title">Share CoMaps navigation</string>
+        <string name="pref_shareNavigation_on">While navigating with CoMaps, show the route, arrival time and remaining distance on the map</string>
+        <string name="pref_shareNavigation_off">Do not share navigation data from CoMaps</string>
+    <string name="err_comaps_not_installed">CoMaps is not installed, or the installed version cannot share navigation data</string>
+    <string name="err_comaps_permission_denied">Permission to read CoMaps navigation data was denied</string>
+
     <!-- Appearance settings -->
     <string name="prefs_header_appearance">Appearance</string>
     <string name="prefs_nightMode_title">Night mode</string>

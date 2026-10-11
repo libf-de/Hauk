@@ -106,6 +106,17 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/prefs_header_navigation">
+
+        <SwitchPreference
+            app:key="shareNavigation"
+            app:icon="@drawable/ic_navigation"
+            app:title="@string/pref_shareNavigation_title"
+            app:summaryOff="@string/pref_shareNavigation_off"
+            app:summaryOn="@string/pref_shareNavigation_on" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/prefs_header_appearance">
 
         <ListPreference

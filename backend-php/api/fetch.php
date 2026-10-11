@@ -22,6 +22,10 @@ if (!$share->exists()) {
 
     $sinceTime=$_GET["since"] ?? null;
 
+    // IDs of navigation routes the client has already received, so that they
+    // aren't sent again on every update.
+    $knownRouteIDs = isset($_GET["rids"]) && is_string($_GET["rids"]) ? explode(",", $_GET["rids"]) : array();
+
     // Solo and group shares have different internal structures. Figure out the
     // correct type so that it can be output.
     switch ($share->getType()) {
@@ -38,7 +42,8 @@ if (!$share->exists()) {
                 "interval" => $session->getInterval(),
                 "points" => $session->getPoints($sinceTime),
                 "encrypted" => $session->isEncrypted(),
-                "salt" => $session->getEncryptionSalt()
+                "salt" => $session->getEncryptionSalt(),
+                "nav" => $session->getNav($knownRouteIDs)
             ));
             break;
 
@@ -48,7 +53,8 @@ if (!$share->exists()) {
                 "expire" => $share->getExpirationTime(),
                 "serverTime" => microtime(true),
                 "interval" => $share->getAutoInterval(),
-                "points" => $share->getAllPoints($sinceTime)
+                "points" => $share->getAllPoints($sinceTime),
+                "nav" => $share->getAllNav($knownRouteIDs)
             ));
             break;
     }

@@ -1,9 +1,14 @@
 package info.varden.hauk.system.preferences.ui;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -15,10 +20,15 @@ import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+import androidx.preference.SwitchPreference;
+
+import java.util.List;
+
 
 import info.varden.hauk.BuildConfig;
 import info.varden.hauk.Constants;
 import info.varden.hauk.R;
+import info.varden.hauk.navigation.ComapsNavigationSource;
 import info.varden.hauk.system.launcher.OpenLinkListener;
 import info.varden.hauk.system.preferences.PreferenceHandler;
 import info.varden.hauk.system.preferences.ui.listener.CascadeBindListener;
@@ -68,6 +78,13 @@ public final class SettingsActivity extends AppCompatActivity {
 
         private Context ctx = null;
 
+        /**
+         * Requests permission to read CoMaps navigation data when navigation sharing is enabled.
+         */
+        private final ActivityResultLauncher<String> navPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(), this::onNavigationPermissionResult
+        );
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             PreferenceManager manager = getPreferenceManager();
@@ -106,6 +123,9 @@ public final class SettingsActivity extends AppCompatActivity {
             Preference proxyTypePref = manager.findPreference(Constants.PREF_PROXY_TYPE.getKey());
             if (proxyTypePref != null) proxyTypePref.callChangeListener(String.valueOf(prefs.get(Constants.PREF_PROXY_TYPE).getIndex()));
 
+            // Ensure CoMaps is installed and grants access when navigation sharing is enabled.
+            setChangeListeners(manager, Constants.PREF_SHARE_NAVIGATION, this::onShareNavigationChanged);
+
             // Update night mode when its preference is changed.
             setChangeListeners(manager, Constants.PREF_NIGHT_MODE, new NightModeChangeListener());
 
@@ -130,6 +150,34 @@ public final class SettingsActivity extends AppCompatActivity {
             } else {
                 Log.wtf("Could not find setting for preference %s when setting OnPreferenceChangeListener", preference); //NON-NLS
             }
+        }
+
+        private boolean onShareNavigationChanged(Preference preference, Object newValue) {
+            if (!Boolean.TRUE.equals(newValue)) return true;
+
+            List<String> installed = ComapsNavigationSource.getInstalledPackages(this.ctx);
+            if (installed.isEmpty()) {
+                Toast.makeText(this.ctx, R.string.err_comaps_not_installed, Toast.LENGTH_LONG).show();
+                return false;
+            }
+            for (String pkg : installed) {
+                if (this.ctx.checkSelfPermission(ComapsNavigationSource.getPermission(pkg)) == PackageManager.PERMISSION_GRANTED) {
+                    return true;
+                }
+            }
+
+            // Enable the preference now and revert it if the permission is denied.
+            Log.i("Requesting permission to read navigation data from %s", installed.get(0)); //NON-NLS
+            this.navPermissionLauncher.launch(ComapsNavigationSource.getPermission(installed.get(0)));
+            return true;
+        }
+
+        private void onNavigationPermissionResult(boolean granted) {
+            if (granted) return;
+            Log.w("Permission to read CoMaps navigation data was denied"); //NON-NLS
+            SwitchPreference pref = findPreference(Constants.PREF_SHARE_NAVIGATION.getKey());
+            if (pref != null) pref.setChecked(false);
+            Toast.makeText(this.ctx, R.string.err_comaps_permission_denied, Toast.LENGTH_LONG).show();
         }
 
         @Override
