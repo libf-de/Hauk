@@ -53,6 +53,19 @@ HAUK_PUBLIC_URL=https://hauk.example.com/ \
 ./hauk
 ```
 
+## Migrating from the PHP backend
+
+`convert-config.py` converts an existing `config.php` to a `config.yaml`. It
+only needs Python 3; PHP does not have to be installed.
+
+```sh
+backend-go/convert-config.py /etc/hauk/config.php -o /etc/hauk/config.yaml
+```
+
+Storage and LDAP options are omitted with a warning. The script refuses to
+convert configurations that use LDAP authentication, which the Go backend does
+not support.
+
 ## Docker
 
 ```sh
