@@ -1,0 +1,22 @@
+{
+    "cannot_find_password_file": "No es troba el fitxer de contrasenya!",
+    "config_missing": "No es pot trobar config.php!",
+    "e2e_adoption_not_allowed": "Aquesta compartició està usant el xifrat d'extrem a extrem i no pot ser adoptat!",
+    "group_e2e_unsupported": "El xifrat d'extrem a extrem no es pot fer servir per les comparticions de grup!",
+    "group_pin_invalid": "PIN de grup no vàlid!",
+    "group_share_not_adoptable": "No podeu adoptar comparticions de grup!",
+    "incorrect_password": "Password incorrecte!",
+    "interval_too_long": "L'interval de ping és massa llarg!",
+    "interval_too_short": "L'interval de ping és massa curt!",
+    "invalid_storage": "Heu establert un storage_backend d'emmagatzematge no vàlid a Hauk!",
+    "location_invalid": "Localització invàlida!",
+    "no_memcached_ext": "No hi ha habilitada cap extensió confidencial (memcache o memcached) a la configuració de PHP!",
+    "no_redis_ext": "No hi ha habilitada cap extensió redis compatible (redis) a la vostra configuració PHP!",
+    "session_expired": "La sessió ha expirat!",
+    "session_invalid": "Sessió invàlida!",
+    "share_adoption_not_allowed": "L'amfitrió de la compartició donada no permet l'adopció!",
+    "share_mode_unsupported": "Mode de compartició no suportat!",
+    "share_not_found": "La compartició donada no existeix!",
+    "share_too_long": "El període de compartició és massa llarg!",
+    "username_required": "Nom d'usuari requerit!"
+}

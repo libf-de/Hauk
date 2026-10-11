@@ -1,0 +1,19 @@
+{
+    "cannot_find_password_file": "Не вдається знайти файл пароля",
+    "config_missing": "Не можу знайти config.php!",
+    "group_pin_invalid": "Невірний груповий PIN!",
+    "group_share_not_adoptable": "Ви не можете додавати групові шари!",
+    "incorrect_password": "Невірний пароль!",
+    "interval_too_long": "Інтервал пінга завеликий!",
+    "interval_too_short": "Інтервал пінга замалий!",
+    "invalid_storage": "Ви встановили недійсний storage_backend у Hauk!",
+    "location_invalid": "Недійсне місцезнаходження!",
+    "no_memcached_ext": "У вашій PHP-конфігурації не включено сумісне розширення (memcache або memcached)!",
+    "no_redis_ext": "У вашій PHP-конфігурації не включено сумісне розширення Redis (redis)!",
+    "session_expired": "Термін дії сесії закінчився!",
+    "session_invalid": "Недійсний сеанс!",
+    "share_adoption_not_allowed": "Хост цієї шари не дозволяє додавання!",
+    "share_mode_unsupported": "Непідтримуваний режим шари!",
+    "share_not_found": "Даної шари не існує!",
+    "share_too_long": "Час життя шари завеликий!"
+}

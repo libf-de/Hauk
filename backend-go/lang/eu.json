@@ -1,0 +1,19 @@
+{
+    "cannot_find_password_file": "Ezin da pasahitz fitxategia aurkitu!",
+    "config_missing": "Ezin izan da config.php aurkitu!",
+    "group_pin_invalid": "Baliogabeko talde PIN-a!",
+    "group_share_not_adoptable": "Ezin dituzu talde partekatzeak adoptatu!",
+    "incorrect_password": "Pasahitz okerra!",
+    "interval_too_long": "Ping tartea luzeegia da!",
+    "interval_too_short": "Ping tartea laburregia da!",
+    "invalid_storage": "storage_backend baliogabe bat ezarri duzu Hauk zerbitzarian!",
+    "location_invalid": "Kokaleku baliogabea!",
+    "no_memcached_ext": "Ez dago memcached luzapen bateragarririk (memcache edo memcached) gaituta zure PHP konfigurazioan!",
+    "no_redis_ext": "Ez dago redis luzapen bateragarririk (redis) gaituta zure PHP konfigurazioan!",
+    "session_expired": "Saioak iraungi du!",
+    "session_invalid": "Saio baliogabea!",
+    "share_adoption_not_allowed": "Emandako partekatzearen ostalariak ez du adopzioa baimentzen!",
+    "share_mode_unsupported": "Euskarririk gabeko parekatze modua!",
+    "share_not_found": "Emandako partekatzea ez da existitzen!",
+    "share_too_long": "Partekatze denbora luzeegia da!"
+}

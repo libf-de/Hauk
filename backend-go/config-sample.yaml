@@ -1,0 +1,136 @@
+# Configuration for the Hauk Go backend.
+#
+# The server looks for this file in /etc/hauk/config.yaml,
+# /usr/local/etc/hauk/config.yaml and ./config.yaml, unless a path is given
+# with -config or the HAUK_CONFIG environment variable.
+#
+# Every option can be overridden with an environment variable named HAUK_ plus
+# the option name in upper case, e.g. HAUK_PUBLIC_URL. Options that are not
+# strings are parsed as YAML, e.g. HAUK_RESERVED_LINKS='{WheresAlice: [alice]}'.
+#
+# All sessions are kept in memory and are lost when the server restarts.
+
+# Address and port to listen on.
+listen: ":8080"
+
+#------------------------------------------------------------------------------
+# AUTHENTICATION
+#------------------------------------------------------------------------------
+
+# Users must be authenticated to use the Hauk server. Valid values are:
+#
+# - PASSWORD: Use a static, shared server password for everyone
+# - HTPASSWD: Require a username and separate password for each user
+auth_method: PASSWORD
+
+# A hashed password that is required for creating sessions and posting location
+# data to Hauk. To generate this value on the terminal:
+#   - bcrypt (secure):     htpasswd -nBC 10 "" | tail -c +2
+#   - MD5 (insecure!):     openssl passwd -1
+#
+# The default value is the hash of an empty password, which allows anyone in the
+# world to use your server. You really should change it.
+password_hash: "$2y$10$4ZP1iY8A3dZygXoPgsXYV.S3gHzBbiT9nSfONjhWrvMxVPkcFq1Ka"
+
+# A file that contains a pairing between users and hashed passwords, used if
+# auth_method is HTPASSWD. bcrypt, MD5 (apr1), SHA-1 and SHA-crypt hashes are
+# supported. To generate this file on the terminal:
+#   - htpasswd -cBC 10 /etc/hauk/users.htpasswd <username>
+# To add additional users to an existing file:
+#   - htpasswd -BC 10 /etc/hauk/users.htpasswd <username>
+htpasswd_path: /etc/hauk/users.htpasswd
+
+#------------------------------------------------------------------------------
+# GENERAL SETTINGS
+#------------------------------------------------------------------------------
+
+# Whether users may request a custom link ID instead of a randomly generated
+# one. Custom links can use characters A-Z, a-z, 0-9, - (dash) and _
+# (underscore). If a requested link is already in use, a random link is
+# generated instead.
+allow_link_req: true
+
+# Links that may only be used by certain users. The following example reserves
+# https://example.com/?WheresAlice for user "alice" only, and reserves
+# https://example.com/?TheRealBob for use by both "bob" and "charlie".
+#
+# This only has an effect with an auth_method that requires a username, such as
+# HTPASSWD.
+reserved_links:
+  WheresAlice: [alice]
+  TheRealBob: [bob, charlie]
+
+# If true, custom link IDs are only accepted if they are listed in
+# reserved_links.
+reserve_whitelist: false
+
+# The type of links to generate for new shares:
+#
+# | Link style                 | Example                               |
+# +----------------------------+---------------------------------------+
+# | LINK_4_PLUS_4_UPPER_CASE   | V8LQ-H2UM                             |
+# | LINK_4_PLUS_4_LOWER_CASE   | qae3-ulna                             |
+# | LINK_4_PLUS_4_MIXED_CASE   | HEq3-tgJ1                             |
+# | LINK_UUID_V4               | 09c8a3b1-e78f-48b1-a604-0da49e99cb5d  |
+# | LINK_16_HEX                | 6cde14c4c6551b41                      |
+# | LINK_16_UPPER_CASE         | WVHA2FNMRT9HSKJK                      |
+# | LINK_16_LOWER_CASE         | bdyslxszs14cj359                      |
+# | LINK_16_MIXED_CASE         | 1Ayh2yUXDe3sdF3S                      |
+# | LINK_32_HEX                | 22adf21f11491ae8f3ae128e23a6782f      |
+# | LINK_32_UPPER_CASE         | R88M1Z2KPL27XN8MF73KCRYPHJD4QQMT      |
+# | LINK_32_LOWER_CASE         | itgbolrbq1c02eot5o46c5wixhdrdb5m      |
+# | LINK_32_MIXED_CASE         | qf5pqr2UKTUT6vREPPSTuqSKkCMojF17      |
+#
+# MIXED_CASE variants do not contain I and l, and MIXED_CASE and UPPER_CASE
+# variants do not contain 0 and O, because they are easily confused. The default
+# is already very hard to guess; see config-sample.php of the PHP backend for a
+# discussion of brute-force times.
+link_style: LINK_4_PLUS_4_UPPER_CASE
+
+# Leaflet tile URI template for the map frontend. Make sure you have permission
+# to use the tile source you choose, and set a proper attribution for it.
+map_tile_uri: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+# Attribution HTML code displayed in the bottom right corner of the map.
+map_attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+
+# Default and maximum zoom levels allowed on the map (0-20). Higher values zoom
+# in closer.
+default_zoom: 14
+max_zoom: 19
+
+# Maximum duration of a single location share, in seconds.
+max_duration: 86400
+
+# Minimum time between each location update, in seconds.
+min_interval: 1
+
+# Time without location updates, in seconds, before a user is shown as offline
+# on the map.
+offline_timeout: 30
+
+# Timeout in seconds for map update requests from the map view, after which the
+# viewer is warned that they lost their network connection.
+request_timeout: 10
+
+# Maximum number of data points stored for each share. Map clients will see up
+# to this number of points when they load the page.
+max_cached_pts: 3
+
+# Maximum number of data points visible on the map at any time, used to draw
+# trails behind the markers.
+max_shown_pts: 100
+
+# Number of seconds of data used to calculate velocity.
+v_data_points: 2
+
+# The color of the marker trails. HTML color name or #rrggbb hex color code.
+trail_color: "#d80037"
+
+# The unit of velocity: KILOMETERS_PER_HOUR, MILES_PER_HOUR or
+# METERS_PER_SECOND. Remaining navigation distances are shown in miles for
+# MILES_PER_HOUR and in kilometers otherwise.
+velocity_unit: KILOMETERS_PER_HOUR
+
+# The publicly accessible URL to reach Hauk, with trailing slash.
+public_url: "https://example.com/"

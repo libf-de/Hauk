@@ -1,0 +1,19 @@
+{
+    "cannot_find_password_file": "Не удается найти файл пароля",
+    "config_missing": "Не могу найти config.php!",
+    "group_pin_invalid": "Неверный групповой PIN!",
+    "group_share_not_adoptable": "Не могу добавить групповую шару!",
+    "incorrect_password": "Неверный пароль!",
+    "interval_too_long": "Слишком большое время пинга!",
+    "interval_too_short": "Слишкмо малое время пинга!",
+    "invalid_storage": "У вас неверный storage_backend для Hauk!",
+    "location_invalid": "Неверное местоположение!",
+    "no_memcached_ext": "Нет включенных совместимых расширений в вашей конфигурации PHP (memcache or memcached)!",
+    "no_redis_ext": "Нет включенных совместимых расширений redis в вашей конфигурации PHP!",
+    "session_expired": "Сессия истекла!",
+    "session_invalid": "Неверная сессия!",
+    "share_adoption_not_allowed": "Сервер этой шары не позволяет добавлять сессии!",
+    "share_mode_unsupported": "Неправильный режим шары!",
+    "share_not_found": "Данная шара уже не существует!",
+    "share_too_long": "Слишком длинное время жизни шары!"
+}
