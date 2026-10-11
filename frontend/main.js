@@ -399,34 +399,9 @@ if (closeUserDetailsE !== null) {
 }
 
 var fetchIntv;
-var countIntv;
 
 function setNewInterval(expire, interval, serverTime) {
-    var countdownE = document.getElementById("countdown");
     var timeOffset = Date.now() / 1000 - serverTime;
-
-    // The data contains an expiration time. Create a countdown at the top of
-    // the map screen that ends when the share is over.
-    countIntv = setInterval(function() {
-        var seconds = expire - Math.round((Date.now() - timeOffset) / 1000);
-        if (seconds < 0) {
-            clearInterval(countIntv);
-            return;
-        }
-
-        var h = Math.floor(seconds / 3600);
-        var m = Math.floor((seconds % 3600) / 60);
-        var s = seconds % 60;
-
-        var time = "";
-        if (h > 0) time += h + ":";
-        if (h > 0 && m < 10) time += "0";
-        time += m + ":";
-        if (s < 10) time += "0";
-        time += s;
-
-        if (countdownE !== null) countdownE.textContent = time;
-    }, 1000);
 
     // The location data contains an interval. Schedule a task that fetches data
     // once per interval time.
@@ -434,8 +409,6 @@ function setNewInterval(expire, interval, serverTime) {
         // Stop the task if the share has expired.
         if ((Date.now() - timeOffset) / 1000 >= expire) {
             clearInterval(fetchIntv);
-            clearInterval(countIntv);
-            if (countdownE !== null) countdownE.textContent = LANG["status_expired"];
             showMessage(LANG["dialog_expired_head"], LANG["dialog_expired_body"]);
         }
 
@@ -445,15 +418,12 @@ function setNewInterval(expire, interval, serverTime) {
             // change.
             if (data.expire != expire || data.interval != interval) {
                 clearInterval(fetchIntv);
-                clearInterval(countIntv);
                 setNewInterval(data.expire, data.interval, data.serverTime);
             }
             processUpdate(data, false);
         }, function() {
             // On failure to get new location data:
             clearInterval(fetchIntv);
-            clearInterval(countIntv);
-            if (countdownE !== null) countdownE.textContent = LANG["status_expired"];
             showMessage(LANG["dialog_expired_head"], LANG["dialog_expired_body"]);
         });
     }, interval * 1000);
@@ -663,10 +633,7 @@ function processUpdate(data, init) {
                 // key and prompt the user for the password again.
                 console.log(error);
                 aesKey = null;
-                if (!init) {
-                    clearInterval(fetchIntv);
-                    clearInterval(countIntv);
-                }
+                if (!init) clearInterval(fetchIntv);
                 processUpdate(data, true);
             });
 

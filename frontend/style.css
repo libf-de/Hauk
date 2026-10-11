@@ -202,9 +202,10 @@ a:last-child > .store-icon {
     background-color: #ddd;
 }
 
-/* The notch at the top of the screen that shows the time remaining of the
-   share. Outer container. */
+/* The notch at the top of the screen that is shown while the viewer is
+   offline. Outer container. */
 #notch {
+    display: none;
     top: 0;
     left: 50%;
     transform: translateX(-50%);
@@ -236,7 +237,7 @@ a:last-child > .store-icon {
     border-color: rgba(0,0,0,0.5) transparent transparent transparent;
 }
 
-/* The middle part of the notch, with the countdown itself. */
+/* The middle part of the notch, with the offline message. */
 #notch div.inner {
     width: 80px;
     height: 20px;
@@ -247,7 +248,10 @@ a:last-child > .store-icon {
     margin: 0 23px;
 }
 
-/* Change the color if client is offline. */
+/* Show the notch if the client is offline. */
+#notch.offline {
+    display: block;
+}
 #notch.offline div.t-left {
     border-color: transparent rgba(165,0,42,0.5) transparent transparent;
 }
@@ -255,11 +259,7 @@ a:last-child > .store-icon {
     border-color: rgba(165,0,42,0.5) transparent transparent transparent;
 }
 #notch.offline div.inner {
-    display: none;
-}
-#notch.offline div.inner.offline {
     background-color: rgba(165,0,42,0.5);
-    display: block;
 }
 
 /* The outer marker div. */
