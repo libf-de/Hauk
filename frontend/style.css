@@ -338,18 +338,76 @@ a:last-child > .store-icon {
     display: none;
 }
 
-/* Navigation ETA and remaining distance, one per line. */
-.marker p > span.nav > span {
-    display: block;
-    padding-top: 2px;
-}
-
-.marker p.dead > span.nav {
-    display: none;
-}
-
 /* Hide the default white box in the top left corner of the marker div. */
 .leaflet-div-icon {
     background: none;
     border: none;
+}
+
+/* The cockpit at the bottom of the screen that shows the ETA and remaining
+   distance of navigating users. Outer container, with one row per user. */
+#cockpit {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    pointer-events: none;
+    background: rgba(12, 12, 12, 0.7);
+    border-radius: 0.7rem 0.7rem 0 0;
+    white-space: nowrap;
+}
+
+/* Hide the cockpit while no user is navigating. */
+#cockpit:empty {
+    display: none;
+}
+
+/* On narrow screens, keep the cockpit clear of the Leaflet attribution. */
+@media (max-width: 700px) {
+    #cockpit {
+        bottom: 20px;
+        border-radius: 0.7rem;
+    }
+}
+
+#cockpit .cockpit-row {
+    display: flex;
+    justify-content: center;
+}
+
+#cockpit .cockpit-row + .cockpit-row {
+    border-top: 1px solid gray;
+}
+
+/* Visible boxes are separated by a vertical line. */
+#cockpit .cockpitbox:not(.hidden) ~ .cockpitbox:not(.hidden) {
+    border-left: 1px solid gray;
+}
+
+/* The nickname box of group shares has no label. */
+#cockpit .cockpitbox.name {
+    display: flex;
+    align-items: center;
+}
+
+#cockpit .cockpitbox.name.hidden {
+    display: none;
+}
+
+#cockpit .label {
+    font-size: 10px;
+    color: white;
+    margin: 0.5rem 0.7rem 0.1rem;
+}
+
+#cockpit .value {
+    font-size: small;
+    font-weight: bold;
+    color: white;
+    margin: 0 0.7rem 0.5rem;
+}
+
+#cockpit .cockpitbox.name .value {
+    margin: 0.5rem 0.7rem;
 }

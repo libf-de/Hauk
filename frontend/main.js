@@ -710,7 +710,8 @@ function processUpdate(data, init) {
                 "listEntry": listE,
                 "state": "live",
                 "route": null,
-                "routeID": null
+                "routeID": null,
+                "cockpit": null
             };
         }
 
@@ -748,7 +749,6 @@ function processUpdate(data, init) {
                                         '<span id="velocity-' + shares[user].id + '">0.0</span> ' +
                                         VELOCITY_UNIT.unit +
                                     '</span><span class="offline" id="last-seen-' + shares[user].id + '">' +
-                                    '</span><span class="nav" id="nav-' + shares[user].id + '">' +
                                     '</span>' +
                                 '</p>' +
                             '</div>',
@@ -867,7 +867,7 @@ function processUpdate(data, init) {
     }
     for (var user in shares) {
         if (!shares.hasOwnProperty(user)) continue;
-        updateNav(user, navs.hasOwnProperty(user) ? navs[user] : null, data.serverTime);
+        updateNav(user, navs.hasOwnProperty(user) ? navs[user] : null, data.serverTime, multiUser);
     }
 
     for (var user in shares) {
@@ -969,11 +969,12 @@ function decryptNav(nav) {
         });
 }
 
+var cockpitE = document.getElementById("cockpit");
+
 // Draws or removes the navigation route of a user and updates the ETA and
-// remaining distance shown below their marker.
-function updateNav(user, nav, serverTime) {
+// remaining distance shown in the cockpit at the bottom of the screen.
+function updateNav(user, nav, serverTime, multiUser) {
     var share = shares[user];
-    var navE = document.getElementById("nav-" + share.id);
 
     // Navigation data is discarded if the user stopped navigating or has not
     // sent any updates for a while.
@@ -981,7 +982,7 @@ function updateNav(user, nav, serverTime) {
         if (share.route !== null) routeLayer.removeLayer(share.route);
         share.route = null;
         share.routeID = null;
-        if (navE !== null) navE.textContent = "";
+        hideCockpitRow(share);
         return;
     }
 
@@ -992,19 +993,61 @@ function updateNav(user, nav, serverTime) {
         share.routeID = nav.rid;
     }
 
-    if (navE !== null) {
-        var lines = [];
-        if (nav.eta !== null) {
-            var eta = new Date(nav.eta * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
-            lines.push(LANG["nav_eta"].split("{{time}}").join(eta));
+    if (nav.eta === null && nav.dist === null) {
+        hideCockpitRow(share);
+        return;
+    }
+
+    if (share.cockpit === null) share.cockpit = createCockpitRow();
+    var eta = nav.eta !== null ? new Date(nav.eta * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : null;
+    setCockpitValue(share.cockpit.name, multiUser ? user : null);
+    setCockpitValue(share.cockpit.eta, eta);
+    setCockpitValue(share.cockpit.dist, nav.dist !== null ? formatDistance(nav.dist) : null);
+    if (cockpitE !== null && share.cockpit.row.parentNode !== cockpitE) {
+        cockpitE.appendChild(share.cockpit.row);
+    }
+}
+
+// Creates a row for the cockpit with boxes for the nickname, ETA and remaining
+// distance of a user.
+function createCockpitRow() {
+    var rowE = document.createElement("div");
+    rowE.className = "cockpit-row";
+    var createBox = function(label) {
+        var boxE = document.createElement("div");
+        boxE.className = "cockpitbox";
+        if (label !== null) {
+            var labelE = document.createElement("p");
+            labelE.className = "label";
+            labelE.textContent = label;
+            boxE.appendChild(labelE);
+        } else {
+            boxE.className += " name";
         }
-        if (nav.dist !== null) lines.push(formatDistance(nav.dist));
-        navE.textContent = "";
-        for (var i = 0; i < lines.length; i++) {
-            var lineE = document.createElement("span");
-            lineE.textContent = lines[i];
-            navE.appendChild(lineE);
-        }
+        var valueE = document.createElement("p");
+        valueE.className = "value";
+        boxE.appendChild(valueE);
+        rowE.appendChild(boxE);
+        return {box: boxE, value: valueE};
+    };
+    return {
+        row: rowE,
+        name: createBox(null),
+        eta: createBox(LANG["nav_eta"]),
+        dist: createBox(LANG["nav_remaining"])
+    };
+}
+
+// Sets the value of a cockpit box, or hides the box if the value is null.
+function setCockpitValue(field, text) {
+    field.value.textContent = text !== null ? text : "";
+    field.box.className = field.box.className.split(" hidden").join("") + (text === null ? " hidden" : "");
+}
+
+// Removes the cockpit row of a user from the screen.
+function hideCockpitRow(share) {
+    if (share.cockpit !== null && share.cockpit.row.parentNode !== null) {
+        share.cockpit.row.parentNode.removeChild(share.cockpit.row);
     }
 }
 
