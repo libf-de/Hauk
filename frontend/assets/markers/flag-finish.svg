@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28" height="32" version="1.1" viewBox="0 0 28 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.75" y="1.5" width="2.5" height="29.5" rx="1.25" fill="#333" stroke="#fff" stroke-width="1"/>
+    <path d="M5 2h20v14h-20z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+    <g fill="#222">
+        <rect x="5.000" y="2.0" width="3.333" height="3.5"/>
+        <rect x="11.667" y="2.0" width="3.333" height="3.5"/>
+        <rect x="18.333" y="2.0" width="3.333" height="3.5"/>
+        <rect x="8.333" y="5.5" width="3.333" height="3.5"/>
+        <rect x="15.000" y="5.5" width="3.333" height="3.5"/>
+        <rect x="21.667" y="5.5" width="3.333" height="3.5"/>
+        <rect x="5.000" y="9.0" width="3.333" height="3.5"/>
+        <rect x="11.667" y="9.0" width="3.333" height="3.5"/>
+        <rect x="18.333" y="9.0" width="3.333" height="3.5"/>
+        <rect x="8.333" y="12.5" width="3.333" height="3.5"/>
+        <rect x="15.000" y="12.5" width="3.333" height="3.5"/>
+        <rect x="21.667" y="12.5" width="3.333" height="3.5"/>
+    </g>
+    <path d="M5 2h20v14h-20z" fill="none" stroke="#222" stroke-width="0.75"/>
+</svg>

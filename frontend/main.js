@@ -971,6 +971,11 @@ function decryptNav(nav) {
 
 var cockpitE = document.getElementById("cockpit");
 
+// Flags marking the start and the destination of a navigation route. The
+// anchor is at the bottom of the flag pole.
+var START_FLAG_ICON = L.icon({iconUrl: "./assets/markers/flag-start.svg", iconSize: [28, 32], iconAnchor: [4, 31]});
+var FINISH_FLAG_ICON = L.icon({iconUrl: "./assets/markers/flag-finish.svg", iconSize: [28, 32], iconAnchor: [4, 31]});
+
 // Draws or removes the navigation route of a user and updates the ETA and
 // remaining distance shown in the cockpit at the bottom of the screen.
 function updateNav(user, nav, serverTime, multiUser) {
@@ -989,7 +994,7 @@ function updateNav(user, nav, serverTime, multiUser) {
     // Draw the route if it is new.
     if (nav.rid !== null && nav.rid !== share.routeID && typeof nav.route === "string") {
         if (share.route !== null) routeLayer.removeLayer(share.route);
-        share.route = L.polyline(decodePolyline(nav.route), {color: ROUTE_COLOR, weight: 5, opacity: 0.7, interactive: false}).addTo(routeLayer);
+        share.route = drawRoute(decodePolyline(nav.route));
         share.routeID = nav.rid;
     }
 
@@ -1006,6 +1011,20 @@ function updateNav(user, nav, serverTime, multiUser) {
     if (cockpitE !== null && share.cockpit.row.parentNode !== cockpitE) {
         cockpitE.appendChild(share.cockpit.row);
     }
+}
+
+// Draws a route with flags at its start and destination. Returns a layer
+// group containing all of them.
+function drawRoute(points) {
+    var group = L.layerGroup().addTo(routeLayer);
+    L.polyline(points, {color: ROUTE_COLOR, weight: 5, opacity: 0.7, interactive: false}).addTo(group);
+    if (points.length >= 2) {
+        // Keep the flags below the markers of the users.
+        var options = {interactive: false, keyboard: false, zIndexOffset: -1000};
+        L.marker(points[0], L.extend({icon: START_FLAG_ICON}, options)).addTo(group);
+        L.marker(points[points.length - 1], L.extend({icon: FINISH_FLAG_ICON}, options)).addTo(group);
+    }
+    return group;
 }
 
 // Creates a row for the cockpit with boxes for the nickname, ETA and remaining
