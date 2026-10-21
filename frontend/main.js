@@ -215,6 +215,18 @@ L.control.radar = function(opts) {
     return new L.control.Radar(opts);
 }
 
+// Returns whether an option of the Go backend is enabled. The PHP backend does
+// not have these options.
+function isEnabled(option) {
+    return window[option] === true;
+}
+
+// Hide the Hauk logo if configured.
+if (isEnabled("HIDE_LOGO")) {
+    var logoE = document.getElementById("logo");
+    if (logoE !== null) logoE.parentNode.style.display = "none";
+}
+
 var map, routeLayer, circleLayer, markerLayer;
 
 function initMap() {
@@ -226,10 +238,12 @@ function initMap() {
     }).addTo(map);
 
     // Add the geolocation control to the map if supported by the browser.
-    if ("geolocation" in navigator && window.isSecureContext) {
+    if ("geolocation" in navigator && window.isSecureContext && !isEnabled("HIDE_LOCATE_BUTTON")) {
         L.control.locate({ position: 'topleft' }).addTo(map);
     }
-    L.control.radar({ position: 'topleft' }).addTo(map);
+    if (!isEnabled("HIDE_USER_LIST_BUTTON")) {
+        L.control.radar({ position: 'topleft' }).addTo(map);
+    }
 
     routeLayer = L.layerGroup().addTo(map);
     circleLayer = L.layerGroup().addTo(map);

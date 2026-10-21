@@ -83,20 +83,23 @@ type Config struct {
 	ReserveWhitelist bool                `yaml:"reserve_whitelist"`
 	LinkStyle        LinkStyle           `yaml:"link_style"`
 
-	MapTileURI     string       `yaml:"map_tile_uri"`
-	MapAttribution string       `yaml:"map_attribution"`
-	DefaultZoom    int          `yaml:"default_zoom"`
-	MaxZoom        int          `yaml:"max_zoom"`
-	MaxDuration    int64        `yaml:"max_duration"`
-	MinInterval    float64      `yaml:"min_interval"`
-	OfflineTimeout int          `yaml:"offline_timeout"`
-	RequestTimeout int          `yaml:"request_timeout"`
-	MaxCachedPts   int          `yaml:"max_cached_pts"`
-	MaxShownPts    int          `yaml:"max_shown_pts"`
-	VDataPoints    int          `yaml:"v_data_points"`
-	TrailColor     string       `yaml:"trail_color"`
-	VelocityUnit   VelocityUnit `yaml:"velocity_unit"`
-	PublicURL      string       `yaml:"public_url"`
+	MapTileURI         string       `yaml:"map_tile_uri"`
+	MapAttribution     string       `yaml:"map_attribution"`
+	HideLogo           bool         `yaml:"hide_logo"`
+	HideLocateButton   bool         `yaml:"hide_locate_button"`
+	HideUserListButton bool         `yaml:"hide_user_list_button"`
+	DefaultZoom        int          `yaml:"default_zoom"`
+	MaxZoom            int          `yaml:"max_zoom"`
+	MaxDuration        int64        `yaml:"max_duration"`
+	MinInterval        float64      `yaml:"min_interval"`
+	OfflineTimeout     int          `yaml:"offline_timeout"`
+	RequestTimeout     int          `yaml:"request_timeout"`
+	MaxCachedPts       int          `yaml:"max_cached_pts"`
+	MaxShownPts        int          `yaml:"max_shown_pts"`
+	VDataPoints        int          `yaml:"v_data_points"`
+	TrailColor         string       `yaml:"trail_color"`
+	VelocityUnit       VelocityUnit `yaml:"velocity_unit"`
+	PublicURL          string       `yaml:"public_url"`
 }
 
 // DefaultPasswordHash is the bcrypt hash of an empty password, which is the

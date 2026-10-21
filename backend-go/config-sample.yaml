@@ -94,6 +94,14 @@ map_tile_uri: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 # Attribution HTML code displayed in the bottom right corner of the map.
 map_attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
 
+# Hide the Hauk logo in the corner of the map.
+hide_logo: false
+
+# Hide the map buttons that show the viewer's own location, and that list the
+# users of the share.
+hide_locate_button: false
+hide_user_list_button: false
+
 # Default and maximum zoom levels allowed on the map (0-20). Higher values zoom
 # in closer.
 default_zoom: 14

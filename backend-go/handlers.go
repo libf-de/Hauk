@@ -601,6 +601,9 @@ func (b *Backend) handleDynamicJS(w http.ResponseWriter, r *http.Request) {
 	}{
 		{"TILE_URI", b.cfg.MapTileURI},
 		{"ATTRIBUTION", b.cfg.MapAttribution},
+		{"HIDE_LOGO", b.cfg.HideLogo},
+		{"HIDE_LOCATE_BUTTON", b.cfg.HideLocateButton},
+		{"HIDE_USER_LIST_BUTTON", b.cfg.HideUserListButton},
 		{"DEFAULT_ZOOM", b.cfg.DefaultZoom},
 		{"MAX_ZOOM", b.cfg.MaxZoom},
 		{"MAX_POINTS", b.cfg.MaxShownPts},

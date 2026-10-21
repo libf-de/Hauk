@@ -22,6 +22,12 @@ is needed.
 - Incremental map updates work for end-to-end encrypted shares. The PHP backend
   compares encrypted timestamps as numbers and therefore returns no new points
   for them after the initial page load.
+- The Hauk logo on the map can be hidden with `hide_logo: true`
+  (`HAUK_HIDE_LOGO=true`), and the map buttons that show the viewer's own
+  location and the list of users with `hide_locate_button` and
+  `hide_user_list_button`.
+- Users of the Android app can share the live streams of their RemoteCam
+  cameras, which are shown on the map.
 
 ## Building
 

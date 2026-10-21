@@ -548,12 +548,12 @@ public_url: https://file.example/
 	if err := os.WriteFile(path, []byte(yaml), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cfg, _, err := LoadConfig(path, []string{"HAUK_PUBLIC_URL=https://env.example/", "HAUK_MAX_ZOOM=17", "HAUK_LINK_STYLE=uuid_v4", "HAUK_TRAIL_COLOR=#123456", "OTHER=1"})
+	cfg, _, err := LoadConfig(path, []string{"HAUK_PUBLIC_URL=https://env.example/", "HAUK_MAX_ZOOM=17", "HAUK_LINK_STYLE=uuid_v4", "HAUK_TRAIL_COLOR=#123456", "HAUK_HIDE_LOGO=true", "OTHER=1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.AuthMethod != AuthHtpasswd || cfg.LinkStyle != LinkUUIDv4 || cfg.VelocityUnit != MilesPerHour ||
-		cfg.PublicURL != "https://env.example/" || cfg.MaxZoom != 17 || cfg.TrailColor != "#123456" ||
+		cfg.PublicURL != "https://env.example/" || cfg.MaxZoom != 17 || cfg.TrailColor != "#123456" || !cfg.HideLogo ||
 		cfg.ReservedLinks["WheresAlice"][0] != "alice" || cfg.DefaultZoom != 14 {
 		t.Errorf("unexpected config %+v", cfg)
 	}
@@ -587,6 +587,9 @@ func TestDynamicJSAndFrontend(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		`var TILE_URI = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";`,
+		`var HIDE_LOGO = false;`,
+		`var HIDE_LOCATE_BUTTON = false;`,
+		`var HIDE_USER_LIST_BUTTON = false;`,
 		`var VELOCITY_UNIT = {"mpsMultiplier":1,"unit":"m/s"};`,
 		`var OFFLINE_TIMEOUT = 30;`,
 	} {
