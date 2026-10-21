@@ -40,6 +40,7 @@ type Session struct {
 	Encrypted int64
 	Salt      *string
 	Nav       *Nav
+	Cams      *Cams
 }
 
 // Nav contains the navigation state of a session. For end-to-end encrypted
@@ -53,6 +54,20 @@ type Nav struct {
 	Dist  any
 	IV    *string
 	Time  *int64
+}
+
+// Cams contains the live stream links of the user's cameras. For end-to-end
+// encrypted sessions, List is the ciphertext of the JSON array and IV is the IV
+// it was encrypted with.
+type Cams struct {
+	List any
+	IV   *string
+}
+
+// Camera is a camera whose live stream can be embedded in the frontend.
+type Camera struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 // GroupHost is a participant of a group share.
@@ -327,6 +342,31 @@ func (s *Session) GetNav(knownRouteIDs []string) map[string]any {
 	return out
 }
 
+// --- Camera streams ----------------------------------------------------------
+
+// SetCams sets the live stream links of the user's cameras. list is either a
+// []Camera or, for end-to-end encrypted sessions, a ciphertext.
+func (s *Session) SetCams(list any, iv *string) {
+	s.Cams = &Cams{List: list, IV: iv}
+}
+
+// ClearCams removes all camera stream links.
+func (s *Session) ClearCams() {
+	s.Cams = nil
+}
+
+// GetCams returns the camera stream links for output to clients, or nil if the
+// user shares no cameras.
+func (s *Session) GetCams() map[string]any {
+	if s.Cams == nil {
+		return nil
+	}
+	return map[string]any{
+		"list": s.Cams.List,
+		"iv":   s.Cams.IV,
+	}
+}
+
 // --- Shares ----------------------------------------------------------------
 
 // NewSoloShare creates a new single-user share with a random link ID.
@@ -442,6 +482,20 @@ func (b *Backend) AllNav(sh *Share, knownRouteIDs []string) orderedMap {
 		if s := b.GetSession(h.SessionID); s != nil {
 			if nav := s.GetNav(knownRouteIDs); nav != nil {
 				out = append(out, keyValue{h.Nick, nav})
+			}
+		}
+	}
+	return out
+}
+
+// AllCams returns the camera stream links of all participants of a group share
+// who share cameras, keyed by nickname.
+func (b *Backend) AllCams(sh *Share) orderedMap {
+	out := orderedMap{}
+	for _, h := range sh.Hosts {
+		if s := b.GetSession(h.SessionID); s != nil {
+			if cams := s.GetCams(); cams != nil {
+				out = append(out, keyValue{h.Nick, cams})
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import info.varden.hauk.Constants
 import info.varden.hauk.R
 import info.varden.hauk.dialog.HaukDialog
 import info.varden.hauk.navigation.ComapsNavigationSource
+import info.varden.hauk.streams.RemoteCamStreamSource
 import info.varden.hauk.system.preferences.IndexedEnum
 import info.varden.hauk.system.preferences.indexresolver.NightModeStyle
 import info.varden.hauk.utils.Log
@@ -93,21 +95,50 @@ fun SettingsScreen(store: SettingsStore, onNavigateUp: () -> Unit) {
         }
     }
 
+    // Same for reading RemoteCam stream links when camera stream sharing is enabled.
+    val streamsPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) {
+            Log.w("Permission to read RemoteCam stream links was denied") //NON-NLS
+            store[Constants.PREF_SHARE_STREAMS] = false
+            Toast.makeText(ctx, R.string.err_remotecam_permission_denied, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Ensures that one of the given installed apps grants access to its data, requesting the
+     * permission of the first one if none do. Returns false if none of the apps are installed.
+     */
+    fun ensurePermission(installed: List<String>, permission: (String) -> String, launcher: (String) -> Unit, @StringRes notInstalled: Int): Boolean {
+        if (installed.isEmpty()) {
+            Toast.makeText(ctx, notInstalled, Toast.LENGTH_LONG).show()
+            return false
+        }
+        val granted = installed.any { pkg -> ctx.checkSelfPermission(permission(pkg)) == PackageManager.PERMISSION_GRANTED }
+        if (!granted) {
+            Log.i("Requesting permission %s", permission(installed[0])) //NON-NLS
+            launcher(permission(installed[0]))
+        }
+        return true
+    }
+
     fun onSwitchChanged(setting: Setting.Switch, value: Boolean) {
-        if (setting.pref == Constants.PREF_SHARE_NAVIGATION && value) {
-            // Ensure CoMaps is installed and grants access when navigation sharing is enabled.
-            val installed = ComapsNavigationSource.getInstalledPackages(ctx)
-            if (installed.isEmpty()) {
-                Toast.makeText(ctx, R.string.err_comaps_not_installed, Toast.LENGTH_LONG).show()
-                return
+        if (value) {
+            val available = when (setting.pref) {
+                Constants.PREF_SHARE_NAVIGATION -> ensurePermission(
+                    ComapsNavigationSource.getInstalledPackages(ctx),
+                    ComapsNavigationSource::getPermission,
+                    navPermissionLauncher::launch,
+                    R.string.err_comaps_not_installed,
+                )
+                Constants.PREF_SHARE_STREAMS -> ensurePermission(
+                    RemoteCamStreamSource.getInstalledPackages(ctx),
+                    RemoteCamStreamSource::getPermission,
+                    streamsPermissionLauncher::launch,
+                    R.string.err_remotecam_not_installed,
+                )
+                else -> true
             }
-            val granted = installed.any { pkg ->
-                ctx.checkSelfPermission(ComapsNavigationSource.getPermission(pkg)) == PackageManager.PERMISSION_GRANTED
-            }
-            if (!granted) {
-                Log.i("Requesting permission to read navigation data from %s", installed[0]) //NON-NLS
-                navPermissionLauncher.launch(ComapsNavigationSource.getPermission(installed[0]))
-            }
+            if (!available) return
         }
         store[setting.pref] = value
     }

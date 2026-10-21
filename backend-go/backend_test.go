@@ -256,6 +256,64 @@ func TestNavigation(t *testing.T) {
 	}
 }
 
+func TestCameraStreams(t *testing.T) {
+	ts := newTestServer(t, nil)
+	sid, shareID := ts.createSolo(nil)
+	base := url.Values{"sid": {sid}, "lat": {"52.5"}, "lon": {"13.4"}, "time": {"100"}}
+
+	_, data := ts.fetch("id=" + shareID)
+	if data["cams"] != nil {
+		t.Errorf("new share should have no cameras: %v", data["cams"])
+	}
+
+	// Entries without an absolute HTTP(S) URL are dropped.
+	form := url.Values{"cams": {`[{"name":" Front ","url":"https://cam.example/s/abc"},{"name":"Bad","url":"javascript:alert(1)"},{"name":"Rel","url":"/s/x"},{"name":"Rear","url":"http://cam.example/s/def"}]`}}
+	for k, v := range base {
+		form[k] = v
+	}
+	expectLines(t, ts.post("/api/post.php", form), "OK", "https://hauk.example/?%s", shareID)
+	_, data = ts.fetch("id=" + shareID)
+	cams, _ := json.Marshal(data["cams"])
+	if string(cams) != `{"iv":null,"list":[{"name":"Front","url":"https://cam.example/s/abc"},{"name":"Rear","url":"http://cam.example/s/def"}]}` {
+		t.Errorf("unexpected cameras %s", cams)
+	}
+
+	// The cameras are kept by later updates without camera data.
+	base.Set("time", "101")
+	ts.post("/api/post.php", base)
+	_, data = ts.fetch("id=" + shareID)
+	if data["cams"] == nil {
+		t.Errorf("cameras should be kept")
+	}
+
+	// Invalid camera data clears the cameras, but the location is stored.
+	form.Set("time", "102")
+	form.Set("cams", "not json")
+	expectLines(t, ts.post("/api/post.php", form), "OK", "https://hauk.example/?%s", shareID)
+	_, data = ts.fetch("id=" + shareID)
+	if data["cams"] != nil || len(data["points"].([]any)) != 3 {
+		t.Errorf("invalid cameras should be cleared: %v", data)
+	}
+
+	// Encrypted camera data is stored as is, with the IV of the update.
+	esid, eshareID := ts.createSolo(url.Values{"e2e": {"1"}, "salt": {"c2FsdA=="}})
+	ts.post("/api/post.php", url.Values{"sid": {esid}, "iv": {"aXY="}, "lat": {"Y2lwaGVy"}, "lon": {"Y2lwaGVy"}, "time": {"MTIz"}, "cams": {"Y2Ftcw==\n"}})
+	_, data = ts.fetch("id=" + eshareID)
+	ecams := data["cams"].(map[string]any)
+	if ecams["list"] != "Y2Ftcw==\n" || ecams["iv"] != "aXY=" {
+		t.Errorf("unexpected encrypted cameras %v", ecams)
+	}
+
+	// Group shares list the cameras by nickname.
+	lines := ts.post("/api/create.php", url.Values{"pwd": {""}, "dur": {"600"}, "int": {"10"}, "mod": {"1"}, "nic": {"Zoe"}})
+	ts.post("/api/post.php", url.Values{"sid": {lines[1]}, "lat": {"1"}, "lon": {"2"}, "time": {"100"}, "cams": {`[{"name":"Dash","url":"https://cam.example/s/zoe"}]`}})
+	_, data = ts.fetch("id=" + lines[4])
+	gcams, _ := json.Marshal(data["cams"])
+	if string(gcams) != `{"Zoe":{"iv":null,"list":[{"name":"Dash","url":"https://cam.example/s/zoe"}]}}` {
+		t.Errorf("unexpected group cameras %s", gcams)
+	}
+}
+
 func TestEncryptedShare(t *testing.T) {
 	ts := newTestServer(t, nil)
 	sid, shareID := ts.createSolo(url.Values{"e2e": {"1"}, "salt": {"c2FsdA=="}, "ado": {"1"}})

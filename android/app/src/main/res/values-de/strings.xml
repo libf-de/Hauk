@@ -141,6 +141,13 @@
     <string name="pref_shareNavigation_off">Keine Navigationsdaten von CoMaps teilen</string>
     <string name="err_comaps_not_installed">CoMaps ist nicht installiert, oder die installierte Version kann keine Navigationsdaten teilen</string>
     <string name="err_comaps_permission_denied">Die Berechtigung zum Lesen der CoMaps-Navigationsdaten wurde verweigert</string>
+
+    <string name="prefs_header_cameras">Kameras</string>
+    <string name="pref_shareStreams_title">RemoteCam-Streams teilen</string>
+    <string name="pref_shareStreams_on">Die Livestreams Ihrer RemoteCam-Kameras auf der Karte anzeigen. Jeder mit dem Freigabelink kann sie ansehen</string>
+    <string name="pref_shareStreams_off">Keine Kamerastreams von RemoteCam teilen</string>
+    <string name="err_remotecam_not_installed">RemoteCam ist nicht installiert, oder die installierte Version kann keine Streamlinks teilen</string>
+    <string name="err_remotecam_permission_denied">Die Berechtigung zum Lesen der RemoteCam-Streamlinks wurde verweigert</string>
     <string name="tls_validation_none_for_onion">Vertrauensanker und Namen für .onion Adressen nicht prüfen (nicht empfohlen)</string>
     <string name="tls_validation_no_anchor_onion">Vertrauensanker für .onion Adressen nicht prüfen (nicht empfohlen)</string>
     <string name="tls_validation_all">Zertifikat immer überprüfen (empfohlen)</string>

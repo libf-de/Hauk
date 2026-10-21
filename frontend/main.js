@@ -601,12 +601,14 @@ function processUpdate(data, init) {
             pointPromises.push(Promise.all(promises));
         }
 
-        // Wait for all points and the navigation data to be decrypted.
+        // Wait for all points, the navigation data and the camera streams to
+        // be decrypted.
         Promise
-            .all([Promise.all(pointPromises), decryptNav(data.nav)])
+            .all([Promise.all(pointPromises), decryptNav(data.nav), decryptCams(data.cams)])
             .then(function(results) {
                 var values = results[0];
                 data.nav = results[1];
+                data.cams = results[2];
                 // Parse all points and conver them to floating point values
                 // (all values in the array are currently numbers).
                 var decoder = new TextDecoder("utf-8");
@@ -837,6 +839,16 @@ function processUpdate(data, init) {
         updateNav(user, navs.hasOwnProperty(user) ? navs[user] : null, data.serverTime, multiUser);
     }
 
+    // Update the camera streams. Group shares contain a map of nicknames to
+    // the cameras of each user.
+    var cams = {};
+    if (data.type == SHARE_TYPE_ALONE) {
+        cams[""] = data.cams;
+    } else if (data.type == SHARE_TYPE_GROUP && data.cams) {
+        cams = data.cams;
+    }
+    updateStreams(cams, multiUser);
+
     for (var user in shares) {
         if (!shares.hasOwnProperty(user)) continue;
 
@@ -944,7 +956,7 @@ var START_FLAG_ICON = L.icon({iconUrl: "./assets/markers/flag-start.svg", iconSi
 var FINISH_FLAG_ICON = L.icon({iconUrl: "./assets/markers/flag-finish.svg", iconSize: [28, 32], iconAnchor: [4, 31]});
 
 // Draws or removes the navigation route of a user and updates the ETA and
-// remaining distance shown in the cockpit at the bottom of the screen.
+// remaining distance shown in the cockpit at the top of the screen.
 function updateNav(user, nav, serverTime, multiUser) {
     var share = shares[user];
 
@@ -1036,6 +1048,154 @@ function hideCockpitRow(share) {
         share.cockpit.row.parentNode.removeChild(share.cockpit.row);
     }
 }
+
+// Decrypts the camera streams of an end-to-end encrypted share. Returns a
+// promise that resolves to the decrypted camera streams, or null.
+function decryptCams(cams) {
+    if (!cams || typeof cams.list !== "string" || typeof cams.iv !== "string") return Promise.resolve(null);
+    return crypto.subtle
+        .decrypt({name: "AES-CBC", iv: byteArray(cams.iv)}, aesKey, byteArray(cams.list))
+        .then(function(buffer) {
+            return {list: JSON.parse(new TextDecoder("utf-8").decode(buffer)), iv: null};
+        })
+        .catch(function(error) {
+            // Never let broken camera data prevent the locations from being
+            // shown.
+            console.log(error);
+            return null;
+        });
+}
+
+var streamsE = document.getElementById("streams");
+
+// The tiles of the camera streams currently on screen, keyed by nickname and
+// stream URL.
+var streamTiles = {};
+
+// The tile that is currently shown in fullscreen, or null.
+var fullscreenTile = null;
+
+// Adds, updates and removes the tiles of the camera streams. cams maps the
+// nickname of each user to their camera data from the server. Existing tiles
+// are never moved or recreated, since that would reload their stream.
+function updateStreams(cams, multiUser) {
+    if (streamsE === null) return;
+    var wanted = [];
+    for (var user in cams) {
+        if (!cams.hasOwnProperty(user) || !cams[user] || !Array.isArray(cams[user].list)) continue;
+        var list = cams[user].list;
+        for (var i = 0; i < list.length; i++) {
+            // Encrypted data cannot be validated by the server.
+            if (!list[i] || !isStreamURL(list[i].url)) continue;
+            var name = typeof list[i].name === "string" ? list[i].name : "";
+            if (multiUser) name = name !== "" ? user + " · " + name : user;
+            wanted.push({key: user + "\n" + list[i].url, url: list[i].url, name: name});
+        }
+    }
+
+    var keep = {};
+    for (var i = 0; i < wanted.length; i++) keep[wanted[i].key] = true;
+    for (var key in streamTiles) {
+        if (!streamTiles.hasOwnProperty(key) || keep.hasOwnProperty(key)) continue;
+        if (streamTiles[key] === fullscreenTile) history.back();
+        streamsE.removeChild(streamTiles[key].root);
+        delete streamTiles[key];
+    }
+
+    // New tiles are inserted before the tile following them in the list.
+    var next = null;
+    for (var i = wanted.length - 1; i >= 0; i--) {
+        var tile = streamTiles[wanted[i].key];
+        if (!tile) {
+            tile = createStreamTile(wanted[i].url);
+            streamTiles[wanted[i].key] = tile;
+            streamsE.insertBefore(tile.root, next);
+        }
+        tile.frame.title = wanted[i].name;
+        tile.open.setAttribute("aria-label", wanted[i].name);
+        tile.name.textContent = wanted[i].name;
+        next = tile.root;
+    }
+}
+
+// Returns whether a URL can be embedded as a camera stream.
+function isStreamURL(url) {
+    if (typeof url !== "string") return false;
+    try {
+        var protocol = new URL(url).protocol;
+        return protocol === "https:" || protocol === "http:";
+    } catch (e) {
+        return false;
+    }
+}
+
+// Creates the tile of a camera stream.
+function createStreamTile(url) {
+    var rootE = document.createElement("div");
+    rootE.className = "stream";
+
+    var frameE = document.createElement("iframe");
+    frameE.src = url;
+    frameE.setAttribute("allow", "autoplay; fullscreen");
+    frameE.setAttribute("referrerpolicy", "no-referrer");
+    rootE.appendChild(frameE);
+
+    // The stream page would swallow taps on the thumbnail, so a transparent
+    // button covers it, which opens the stream in fullscreen.
+    var openE = document.createElement("button");
+    openE.className = "stream-open";
+    var nameE = document.createElement("span");
+    nameE.className = "stream-name";
+    openE.appendChild(nameE);
+    rootE.appendChild(openE);
+
+    var closeE = document.createElement("button");
+    closeE.className = "stream-close";
+    closeE.textContent = "✕";
+    closeE.setAttribute("aria-label", LANG["btn_close"]);
+    rootE.appendChild(closeE);
+
+    var tile = {root: rootE, frame: frameE, open: openE, name: nameE};
+    openE.addEventListener("click", function() { openStream(tile); });
+    // Closing goes back in the history, which closes the stream (see below).
+    closeE.addEventListener("click", function() { history.back(); });
+    return tile;
+}
+
+// Shows a camera stream in fullscreen. A history entry is added so that the
+// back button of the browser closes the stream again.
+function openStream(tile) {
+    if (fullscreenTile !== null) return;
+    fullscreenTile = tile;
+    tile.root.classList.add("fullscreen");
+    history.pushState({stream: true}, "");
+}
+
+// Shrinks the fullscreen camera stream back into the strip.
+function closeStream() {
+    if (fullscreenTile === null) return;
+    fullscreenTile.root.classList.remove("fullscreen");
+    fullscreenTile = null;
+}
+
+window.addEventListener("popstate", closeStream);
+
+window.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && fullscreenTile !== null) history.back();
+});
+
+// The stream pages report the aspect ratio of their video, which is used to
+// size their tiles.
+window.addEventListener("message", function(e) {
+    if (!e.data || e.data.source !== "remotecam") return;
+    var ratio = parseFloat(e.data.aspectRatio);
+    if (!(ratio >= 0.2 && ratio <= 5)) return;
+    for (var key in streamTiles) {
+        if (streamTiles.hasOwnProperty(key) && streamTiles[key].frame.contentWindow === e.source) {
+            streamTiles[key].root.style.setProperty("--aspect", ratio);
+        }
+    }
+});
 
 // Decodes a route in the Encoded Polyline Algorithm Format into an array of
 // [lat, lon] pairs.

@@ -49,6 +49,7 @@ public enum Constants {
     public static final Preference<Boolean> PREF_CONFIRM_STOP = new Preference.Boolean("confirmStop", true);
     public static final Preference<Boolean> PREF_HIDE_LOGO = new Preference.Boolean("hideLogo", false);
     public static final Preference<Boolean> PREF_SHARE_NAVIGATION = new Preference.Boolean("shareNavigation", false);
+    public static final Preference<Boolean> PREF_SHARE_STREAMS = new Preference.Boolean("shareStreams", false);
 
     @Deprecated // Use PREF_SERVER_ENCRYPTED instead
     public static final Preference<String> PREF_SERVER = new Preference.String("server", "");
@@ -101,6 +102,7 @@ public enum Constants {
     // Packet parameter keys.
     public static final String PACKET_PARAM_ACCURACY = "acc";
     public static final String PACKET_PARAM_ADOPTABLE = "ado";
+    public static final String PACKET_PARAM_CAMERA_STREAMS = "cams";
     public static final String PACKET_PARAM_DURATION = "dur";
     public static final String PACKET_PARAM_E2E_FLAG = "e2e";
     public static final String PACKET_PARAM_GROUP_PIN = "pin";
@@ -157,5 +159,14 @@ public enum Constants {
             "app.comaps.fdroid.debug",
             "app.comaps.google.debug",
             "app.comaps.huawei.debug"
+    };
+
+    // Package names of RemoteCam builds that expose camera stream links, in order of preference.
+    // Each one must also be listed in <queries> and <uses-permission> in AndroidManifest.xml.
+    public static final String[] REMOTECAM_PACKAGES = {
+            "de.libf.remotecam",
+            "de.libf.remotecam.debug",
+            "de.libf.remotecam.dashcam",
+            "com.samsung.android.scan3d"
     };
 }

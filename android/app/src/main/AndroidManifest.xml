@@ -20,6 +20,12 @@
     <uses-permission android:name="app.comaps.google.debug.permission.READ_NAVIGATION_DATA" />
     <uses-permission android:name="app.comaps.huawei.debug.permission.READ_NAVIGATION_DATA" />
 
+    <!-- Read camera stream links from RemoteCam. Keep in sync with Constants.REMOTECAM_PACKAGES. -->
+    <uses-permission android:name="de.libf.remotecam.permission.READ_STREAM_LINKS" />
+    <uses-permission android:name="de.libf.remotecam.debug.permission.READ_STREAM_LINKS" />
+    <uses-permission android:name="de.libf.remotecam.dashcam.permission.READ_STREAM_LINKS" />
+    <uses-permission android:name="com.samsung.android.scan3d.permission.READ_STREAM_LINKS" />
+
     <queries>
         <package android:name="app.comaps" />
         <package android:name="app.comaps.fdroid" />
@@ -29,6 +35,10 @@
         <package android:name="app.comaps.fdroid.debug" />
         <package android:name="app.comaps.google.debug" />
         <package android:name="app.comaps.huawei.debug" />
+        <provider android:authorities="de.libf.remotecam.provider.streams" />
+        <provider android:authorities="de.libf.remotecam.debug.provider.streams" />
+        <provider android:authorities="de.libf.remotecam.dashcam.provider.streams" />
+        <provider android:authorities="com.samsung.android.scan3d.provider.streams" />
     </queries>
 
     <application

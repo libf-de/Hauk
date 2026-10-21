@@ -162,6 +162,14 @@
     <string name="err_comaps_not_installed">CoMaps is not installed, or the installed version cannot share navigation data</string>
     <string name="err_comaps_permission_denied">Permission to read CoMaps navigation data was denied</string>
 
+    <!-- Camera settings -->
+    <string name="prefs_header_cameras">Cameras</string>
+    <string name="pref_shareStreams_title">Share RemoteCam streams</string>
+        <string name="pref_shareStreams_on">Show the live streams of your RemoteCam cameras on the map. Anyone with the share link can watch them</string>
+        <string name="pref_shareStreams_off">Do not share camera streams from RemoteCam</string>
+    <string name="err_remotecam_not_installed">RemoteCam is not installed, or the installed version cannot share stream links</string>
+    <string name="err_remotecam_permission_denied">Permission to read RemoteCam stream links was denied</string>
+
     <!-- Appearance settings -->
     <string name="prefs_header_appearance">Appearance</string>
     <string name="prefs_nightMode_title">Night mode</string>

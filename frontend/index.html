@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src * data:; connect-src 'self'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; form-action 'none'; worker-src 'none'; manifest-src 'none';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src * data:; connect-src 'self'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src https: http:; form-action 'none'; worker-src 'none'; manifest-src 'none';">
 
         <!-- Load Leaflet for the map. -->
         <link rel="stylesheet" href="./lib/leaflet/1.6.0/leaflet.css" />
@@ -31,7 +31,7 @@
             </div>
 
             <!-- The ETA and remaining distance of users navigating with CoMaps
-                 are shown in a cockpit at the bottom of the screen. -->
+                 are shown in a cockpit at the top of the screen. -->
             <div id="cockpit"></div>
 
             <!-- The Hauk logo is displayed in the bottom left or right corner,
@@ -41,6 +41,12 @@
                     <div></div>
                 </div>
             </a>
+
+            <!-- Live streams of the users' RemoteCam cameras are shown in a
+                 strip at the bottom of the screen. Tapping one shows it in
+                 fullscreen. Kept last so that fullscreen streams cover the
+                 rest of the map. -->
+            <div id="streams"></div>
         </div>
 
         <!-- JavaScript is required for Leaflet and AJAX requests to the local

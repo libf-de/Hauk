@@ -198,6 +198,12 @@ val SETTINGS = listOf(
         ),
     ),
     SettingCategory(
+        R.string.prefs_header_cameras,
+        listOf(
+            Setting.Switch(Constants.PREF_SHARE_STREAMS, R.string.pref_shareStreams_title, SettingIcon.Vector(HaukIcons.Videocam), R.string.pref_shareStreams_on, R.string.pref_shareStreams_off),
+        ),
+    ),
+    SettingCategory(
         R.string.prefs_header_appearance,
         listOf(
             Setting.Choice(Constants.PREF_NIGHT_MODE, NightModeStyle::class.java, R.string.prefs_nightMode_title, SettingIcon.Drawable(R.drawable.ic_brightness_3), R.array.night_mode_modes),

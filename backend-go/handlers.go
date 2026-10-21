@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
@@ -28,6 +29,12 @@ const (
 	msgMissingData = "Missing data!\n"
 
 	navRouteMaxLength = 200000
+
+	// Limits for the camera stream links sent by clients.
+	camsMaxLength    = 20000
+	camsMaxCount     = 16
+	camNameMaxLength = 100
+	camURLMaxLength  = 2048
 
 	// Maximum size of a request body. Requests carrying a navigation route
 	// can be a few hundred kilobytes large.
@@ -263,7 +270,34 @@ func (b *Backend) handleCreate(c *ctx) {
 	}
 }
 
-// handlePost stores a location update, and optionally navigation data.
+// parseCams parses and validates the JSON array of camera stream links sent by
+// clients. Invalid entries are dropped. Only absolute HTTP(S) URLs are accepted
+// so that the frontend can embed them safely.
+func parseCams(data string) []Camera {
+	var in []Camera
+	if err := json.Unmarshal([]byte(data), &in); err != nil {
+		return nil
+	}
+	var out []Camera
+	for _, cam := range in {
+		if len(out) >= camsMaxCount {
+			break
+		}
+		u, err := url.Parse(cam.URL)
+		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || len(cam.URL) > camURLMaxLength {
+			continue
+		}
+		name := []rune(strings.TrimSpace(cam.Name))
+		if len(name) > camNameMaxLength {
+			name = name[:camNameMaxLength]
+		}
+		out = append(out, Camera{Name: string(name), URL: cam.URL})
+	}
+	return out
+}
+
+// handlePost stores a location update, and optionally navigation data and
+// camera stream links.
 func (b *Backend) handlePost(c *ctx) {
 	if !c.requirePOST("lat", "lon", "time", "sid") {
 		return
@@ -286,6 +320,8 @@ func (b *Backend) handlePost(c *ctx) {
 	hasRoute = hasRoute && len(route) <= navRouteMaxLength
 	eta, hasETA := c.post("neta")
 	dist, hasDist := c.post("ndst")
+	cams, hasCams := c.post("cams")
+	hasCams = hasCams && len(cams) <= camsMaxLength
 
 	if !session.IsEncrypted() {
 		lat := phpFloatval(latStr)
@@ -318,6 +354,13 @@ func (b *Backend) handlePost(c *ctx) {
 		if hasETA && hasDist && isNumeric(eta) && isNumeric(dist) {
 			b.SetNavProgress(session, phpFloatval(eta), max(0, phpFloatval(dist)), nil)
 		}
+		if hasCams {
+			if list := parseCams(cams); len(list) > 0 {
+				session.SetCams(list, nil)
+			} else {
+				session.ClearCams()
+			}
+		}
 	} else {
 		// Input validation cannot be performed for end-to-end encrypted data.
 		if !c.requirePOST("iv") {
@@ -338,6 +381,9 @@ func (b *Backend) handlePost(c *ctx) {
 		}
 		if hasETA && hasDist {
 			b.SetNavProgress(session, eta, dist, &iv)
+		}
+		if hasCams {
+			session.SetCams(cams, &iv)
 		}
 	}
 
@@ -396,9 +442,12 @@ func (b *Backend) handleFetch(c *ctx) {
 			c.write(c.lang.T("session_invalid") + "\n")
 			return
 		}
-		var nav any
+		var nav, cams any
 		if n := session.GetNav(knownRouteIDs); n != nil {
 			nav = n
+		}
+		if cs := session.GetCams(); cs != nil {
+			cams = cs
 		}
 		data = map[string]any{
 			"type":       share.Type,
@@ -409,6 +458,7 @@ func (b *Backend) handleFetch(c *ctx) {
 			"encrypted":  session.IsEncrypted(),
 			"salt":       session.Salt,
 			"nav":        nav,
+			"cams":       cams,
 		}
 	case ShareTypeGroup:
 		data = map[string]any{
@@ -418,6 +468,7 @@ func (b *Backend) handleFetch(c *ctx) {
 			"interval":   b.AutoInterval(share),
 			"points":     b.AllPoints(share, since),
 			"nav":        b.AllNav(share, knownRouteIDs),
+			"cams":       b.AllCams(share),
 		}
 	}
 
