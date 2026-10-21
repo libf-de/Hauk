@@ -6,9 +6,6 @@
     <string name="label_status_coarse">Oczekiwanie na dokładną lokalizację…</string>
     <string name="label_status_wait">Oczekiwanie na sygnał GPS…</string>
     <string name="label_status_none">Udostępnianie lokalizacji jest wyłączone</string>
-    <string name="sel_unit_opt_days">dni</string>
-    <string name="sel_unit_opt_hours">godzin</string>
-    <string name="sel_unit_opt_minutes">minut</string>
     <string name="sel_mode_opt_join_group">Dołącz do grupy</string>
     <string name="sel_mode_opt_create_group">Stwórz grupę</string>
     <string name="sel_mode_opt_alone">Tylko moja lokalizacja</string>
@@ -161,4 +158,6 @@
     <string name="label_status_disconnected">Błąd serwera</string>
     <string name="label_status_lost_gnss">Szukanie lokalizacji…</string>
     <string name="label_allow_adopt">Zezwól na adopcję:</string>
+    <string name="action_navigate_up">Przejdź wyżej</string>
+    <string name="pref_not_set">Nie ustawiono</string>
 </resources>

@@ -26,9 +26,6 @@
     <string name="link_type_group_member">Groepsdeling (deelnemer)</string>
     <string name="sel_mode_opt_alone">Deel alleen mijn locatie</string>
     <string name="sel_mode_opt_create_group">Maak een groepsdeling aan</string>
-    <string name="sel_unit_opt_minutes">minuten</string>
-    <string name="sel_unit_opt_hours">uren</string>
-    <string name="sel_unit_opt_days">dagen</string>
     <string name="label_status_none">Locatie delen inactief</string>
     <string name="label_status_coarse">Wachten op fix met hoge nauwkeurigheid…</string>
     <string name="label_status_ok">Locatie delen actief!</string>
@@ -160,4 +157,6 @@
     <string name="err_no_nickname">Je moet eerst een nickname instellen voordat je lid kan worden van een groep. Stel een nickname is en probeer het opnieuw.</string>
     <string name="err_invalid_duration">De opgegeven duratie is ongeldig. Geef een nieuwe duratie op.</string>
     <string name="btn_remember">Niet opnieuw tonen</string>
+    <string name="action_navigate_up">Omhoog navigeren</string>
+    <string name="pref_not_set">Niet ingesteld</string>
 </resources>

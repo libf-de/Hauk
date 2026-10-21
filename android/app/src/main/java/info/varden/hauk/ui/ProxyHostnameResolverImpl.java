@@ -1,10 +1,8 @@
 package info.varden.hauk.ui;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -16,6 +14,7 @@ import info.varden.hauk.R;
 import info.varden.hauk.dialog.Buttons;
 import info.varden.hauk.dialog.CustomDialogBuilder;
 import info.varden.hauk.dialog.DialogService;
+import info.varden.hauk.dialog.HostedDialog;
 import info.varden.hauk.http.ConnectionParameters;
 import info.varden.hauk.http.SessionInitiationPacket;
 import info.varden.hauk.http.proxy.NameResolverTask;
@@ -47,7 +46,7 @@ public final class ProxyHostnameResolverImpl extends NameResolverTask {
     private final String groupPin;
 
     private final Object progressLock = new Object();
-    private ProgressDialog progress = null;
+    private HostedDialog progress = null;
 
     ProxyHostnameResolverImpl(Activity ctx, SessionManager manager, Runnable uiResetTask, PreferenceManager prefs, SessionInitiationResponseHandler responseHandler, SessionInitiationPacket.InitParameters initParams, ShareMode mode, boolean allowAdoption, String nickname, String groupPin) {
         super(prefs);
@@ -68,13 +67,7 @@ public final class ProxyHostnameResolverImpl extends NameResolverTask {
         // Show a progress dialog only if resolution has to take place. Otherwise, no progress
         // dialog is shown.
         synchronized (this.progressLock) {
-            this.progress = new ProgressDialog(this.ctx.get());
-            this.progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            this.progress.setTitle(R.string.progress_connect_title);
-            this.progress.setMessage(this.ctx.get().getString(R.string.progress_resolving_proxy));
-            this.progress.setIndeterminate(true);
-            this.progress.setCancelable(false);
-            this.progress.show();
+            this.progress = new DialogService(this.ctx.get()).showProgress(R.string.progress_connect_title, R.string.progress_resolving_proxy);
         }
     }
 
@@ -153,12 +146,6 @@ public final class ProxyHostnameResolverImpl extends NameResolverTask {
                         // Open Settings button
                         ProxyHostnameResolverImpl.this.uiResetTask.run();
                         ctx.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                    }
-
-                    @Nullable
-                    @Override
-                    public View createView(Context ctx) {
-                        return null;
                     }
                 });
             }

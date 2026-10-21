@@ -23,9 +23,6 @@
     <string name="link_type_group_member">Partajare în grup (membru)</string>
     <string name="sel_mode_opt_create_group">Creează o partajare în grup</string>
     <string name="sel_mode_opt_join_group">Alătură-te unei partajări în grup</string>
-    <string name="sel_unit_opt_minutes">minut(e)</string>
-    <string name="sel_unit_opt_hours">ora(e)</string>
-    <string name="sel_unit_opt_days">zi(le)</string>
     <string name="label_status_none">Partajare locație inactivă</string>
     <string name="label_status_wait">Se așteaptă determinarea GNSS inițială…</string>
     <string name="label_status_coarse">Se așteaptă determinarea cu precizie înaltă…</string>
@@ -163,4 +160,6 @@
     <string name="pref_hideLogo_off">Logoul Hauk va fi afișat în partea de sus a ecranului principal</string>
     <string name="pref_hideLogo_on">Logoul Hauk va fi ascuns de pe ecranul principal</string>
     <string name="prefs_hideLogo_title">Ascunde logoul</string>
+    <string name="action_navigate_up">Navigați în sus</string>
+    <string name="pref_not_set">Nesetată</string>
 </resources>

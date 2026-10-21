@@ -13,10 +13,7 @@
     <string name="link_type_group_host">Gruppenfreigabe (Host)</string>
     <string name="sel_mode_opt_alone">Nur meine eigene Position freigeben</string>
     <string name="sel_mode_opt_create_group">Gruppenfreigabe erstellen</string>
-    <string name="sel_unit_opt_minutes">Minute(n)</string>
     <string name="link_type_solo">Nur Deine Position</string>
-    <string name="sel_unit_opt_hours">Stunde(n)</string>
-    <string name="sel_unit_opt_days">Tag(e)</string>
     <string name="label_status_none">Standortfreigabe inaktiv</string>
     <string name="label_status_wait">Warte auf ersten GNSS-Fix…</string>
     <string name="label_status_ok">Standortfreigabe aktiv!</string>
@@ -166,4 +163,6 @@
     <string name="dialog_confirm_stop_share">Bist du sicher, dass du diese Freigabe löschen willst\?</string>
     <string name="dialog_confirm_stop_body">Bist du sicher, dass du die Freigabe aufheben willst\?</string>
     <string name="label_status_lost_gnss">Standort wird ermittelt…</string>
+    <string name="action_navigate_up">Nach oben</string>
+    <string name="pref_not_set">Nicht festgelegt</string>
 </resources>

@@ -34,9 +34,6 @@
     <string name="label_nickname">Takma ad:</string>
     <string name="label_explain_adopt">(Bu nedir\?)</string>
     <string name="sel_mode_opt_alone">Sadece kendi konumumu paylaş</string>
-    <string name="sel_unit_opt_days">gün</string>
-    <string name="sel_unit_opt_hours">saat</string>
-    <string name="sel_unit_opt_minutes">dakika</string>
     <string name="action_settings">Ayarlar</string>
     <string name="label_status_disconnected">Sunucuya erişilemiyor</string>
     <string name="label_status_ok">Konum paylaşma aktif!</string>
@@ -49,4 +46,6 @@
     <string name="label_duration">Paylaşım süresi:</string>
     <string name="label_heading">Açık kaynak konum paylaşımı</string>
     <string name="label_heading_links">Aktif linkler</string>
+    <string name="action_navigate_up">Yukarı git</string>
+    <string name="pref_not_set">Ayarlanmadı</string>
 </resources>

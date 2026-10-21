@@ -2,9 +2,6 @@ package info.varden.hauk.system.powersaving;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.view.View;
-
-import androidx.annotation.Nullable;
 
 import info.varden.hauk.Constants;
 import info.varden.hauk.dialog.CustomDialogBuilder;
@@ -57,11 +54,5 @@ public final class WarningDialog implements CustomDialogBuilder {
         // Open settings button clicked.
         saveAcknowledgement();
         this.device.launch(this.ctx);
-    }
-
-    @Nullable
-    @Override
-    public View createView(Context ctx) {
-        return null;
     }
 }

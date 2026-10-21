@@ -24,9 +24,6 @@
     <string name="btn_adopt">добавить к существующей ссылке</string>
     <string name="btn_share_short">Шара</string>
     <string name="link_type_group_member">Группа (участник)</string>
-    <string name="sel_unit_opt_minutes">минут</string>
-    <string name="sel_unit_opt_hours">часов</string>
-    <string name="sel_unit_opt_days">дней</string>
     <string name="label_status_none">Шаринг местоположения не работает</string>
     <string name="label_status_ok">Шаринг местоположения включен!</string>
     <string name="explain_adopt_title">Присоединение к шаре</string>
@@ -156,4 +153,6 @@
     <string name="about_report_issue_title">Сообщить о ошибке</string>
     <string name="label_heading_no_links">Нет активных ссылок</string>
     <string name="label_status_lost_gnss">Поиск местоположения…</string>
+    <string name="action_navigate_up">Перейти вверх</string>
+    <string name="pref_not_set">Не указано</string>
 </resources>

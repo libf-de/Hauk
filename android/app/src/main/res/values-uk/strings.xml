@@ -47,9 +47,6 @@
     <string name="link_type_group_member">Групова шара (учасник)</string>
     <string name="sel_mode_opt_create_group">Створити групову шару</string>
     <string name="sel_mode_opt_join_group">Приєднатися до групової шари</string>
-    <string name="sel_unit_opt_minutes">хвилин</string>
-    <string name="sel_unit_opt_hours">годин</string>
-    <string name="sel_unit_opt_days">днів</string>
     <string name="label_status_coarse">Чекаємо на розрахунок високоточного місцеположення…</string>
     <string name="label_status_ok">Шарінг місцеположення активний!</string>
     <string name="label_pin_head">ВАШ ГРУПОВИЙ PIN:</string>
@@ -107,4 +104,6 @@
     <string name="authorize_question">Ви хочете дозволити в майбутньому створювати сеанси з трансляцій із цією ідентифікацією\?</string>
     <string name="err_malformed_url">URL серверу що ви ввели не вірний.</string>
     <string name="err_location_disabled">Сервіси місцеположення вимкнуті або заборонені. Будь ласка включіть високоточні сервіси місцеположення для того щоб можно було ділитися вашим положенням.</string>
+    <string name="action_navigate_up">Перейти вгору</string>
+    <string name="pref_not_set">Не налаштовано</string>
 </resources>

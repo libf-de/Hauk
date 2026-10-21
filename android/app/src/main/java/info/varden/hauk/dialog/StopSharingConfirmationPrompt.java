@@ -1,10 +1,5 @@
 package info.varden.hauk.dialog;
 
-import android.content.Context;
-import android.view.View;
-
-import androidx.annotation.Nullable;
-
 import info.varden.hauk.Constants;
 import info.varden.hauk.manager.SessionManager;
 import info.varden.hauk.struct.Share;
@@ -54,11 +49,5 @@ public final class StopSharingConfirmationPrompt implements CustomDialogBuilder.
     @Override
     public void onNegative() {
         // Do nothing.
-    }
-
-    @Nullable
-    @Override
-    public View createView(Context ctx) {
-        return null;
     }
 }

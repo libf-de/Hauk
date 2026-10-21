@@ -24,9 +24,6 @@
     <string name="link_type_group_member">Compartició de grup (membre)</string>
     <string name="sel_mode_opt_alone">Mostra només la meva localització</string>
     <string name="sel_mode_opt_join_group">Unir-se a una compartició de grup</string>
-    <string name="sel_unit_opt_minutes">minut(s)</string>
-    <string name="sel_unit_opt_hours">hora(es)</string>
-    <string name="sel_unit_opt_days">dia(es)</string>
     <string name="label_status_none">Compartició de localització inactiva</string>
     <string name="label_status_wait">Esperant per la fixació inicial del GNSS…</string>
     <string name="label_status_ok">Compartició de localització activa!</string>
@@ -115,4 +112,6 @@
 \n
 \nSi activeu aquesta opció i compartiu la vostra ubicació amb un grup d’amics i algú altre també vol compartir la seva ubicació, pot crear un grup compartit i afegir-lo al seu mapa, de manera que tots dos aparegueu al mateix mapa d’ubicació compartit. Això és útil si és conduir i no es pot utilitzar el telèfon, ja que l\'adopció de la seva participació per part d\'altres persones no requereix cap interacció per part seva.</string>
     <string name="err_ver_group">El servidor no admet comparticions de grup. Les accions del grup són compatibles amb la versió %s i superiors; actualment el servidor està executant la versió %s. La vostra participació s\'ha convertit en una participació individual.</string>
+    <string name="action_navigate_up">Navega cap amunt</string>
+    <string name="pref_not_set">No definit</string>
 </resources>
