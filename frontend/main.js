@@ -1140,8 +1140,8 @@ function createStreamTile(url) {
     frameE.setAttribute("referrerpolicy", "no-referrer");
     rootE.appendChild(frameE);
 
-    // The stream page would swallow taps on the thumbnail, so a transparent
-    // button covers it, which opens the stream in fullscreen.
+    // The stream page would swallow taps, so a transparent button covers it,
+    // which opens the stream in fullscreen, or closes it again.
     var openE = document.createElement("button");
     openE.className = "stream-open";
     var nameE = document.createElement("span");
@@ -1151,13 +1151,18 @@ function createStreamTile(url) {
 
     var closeE = document.createElement("button");
     closeE.className = "stream-close";
-    closeE.textContent = "✕";
     closeE.setAttribute("aria-label", LANG["btn_close"]);
     rootE.appendChild(closeE);
 
     var tile = {root: rootE, frame: frameE, open: openE, name: nameE};
-    openE.addEventListener("click", function() { openStream(tile); });
     // Closing goes back in the history, which closes the stream (see below).
+    openE.addEventListener("click", function() {
+        if (fullscreenTile === tile) {
+            history.back();
+        } else {
+            openStream(tile);
+        }
+    });
     closeE.addEventListener("click", function() { history.back(); });
     return tile;
 }

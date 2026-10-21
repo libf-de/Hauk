@@ -410,26 +410,20 @@ a:last-child > .store-icon {
     margin: 0.5rem 0.7rem;
 }
 
-/* The strip of camera streams at the bottom of the screen. It is kept clear of
-   the Hauk logo and the Leaflet attribution, and scrolls horizontally if the
-   streams don't fit. */
+/* The strip of camera streams at the bottom of the screen. It covers the Hauk
+   logo and the Leaflet attribution, and scrolls horizontally if the streams
+   don't fit. */
 #streams {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 40px;
+    bottom: 4px;
     z-index: 1000;
     display: flex;
     gap: 8px;
     padding: 0 10px;
     overflow-x: auto;
     pointer-events: none;
-}
-
-@media (max-width: 700px) {
-    #streams {
-        bottom: 55px;
-    }
 }
 
 /* A single stream. The width follows from the aspect ratio reported by the
@@ -522,22 +516,41 @@ a:last-child > .store-icon {
     z-index: 1;
 }
 
-#streams .stream.fullscreen .stream-open {
+#streams .stream.fullscreen .stream-name {
     display: none;
 }
 
+/* The close button of a fullscreen stream: a bold white cross on a dark
+   circle. */
 #streams .stream.fullscreen .stream-close {
     display: block;
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 44px;
-    height: 44px;
+    top: 16px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
     padding: 0;
-    border: 0;
+    border: 3px solid white;
     border-radius: 50%;
-    background: rgba(12, 12, 12, 0.7);
-    color: white;
-    font-size: 20px;
+    background: rgba(12, 12, 12, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     cursor: pointer;
+}
+
+#streams .stream-close::before,
+#streams .stream-close::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 5px;
+    margin: -2.5px 0 0 -14px;
+    border-radius: 2.5px;
+    background: white;
+    transform: rotate(45deg);
+}
+
+#streams .stream-close::after {
+    transform: rotate(-45deg);
 }
