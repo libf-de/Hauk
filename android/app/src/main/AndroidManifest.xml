@@ -102,6 +102,24 @@
             </intent-filter>
         </receiver>
 
+        <!-- Android Auto: shows the sharing status and starts/stops shares from the car screen. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
+
+        <service
+            android:name=".car.HaukCarAppService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.IOT" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".service.LocationPushService"
             android:enabled="true"

@@ -190,4 +190,14 @@
     <string name="about_source_code_title">Source code</string>
     <string name="about_report_issue_title">Report an issue</string>
         <string name="link_issue_tracker" translatable="false">https://github.com/bilde2910/Hauk/issues/new</string>
+
+    <!-- Android Auto -->
+    <string name="car_sharing_until">Sharing until %s</string>
+    <string name="car_link">Link</string>
+    <string name="car_duration">Duration</string>
+    <string name="car_duration_title">Share duration</string>
+    <string name="car_server">Server</string>
+    <string name="car_server_none">Not configured</string>
+    <string name="car_err_server_not_configured">Set up a backend server in Hauk on your phone first.</string>
+    <string name="car_err_missing_perms">Allow Hauk to access your location on your phone first.</string>
 </resources>

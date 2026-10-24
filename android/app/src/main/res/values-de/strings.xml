@@ -172,4 +172,14 @@
     <string name="label_status_lost_gnss">Standort wird ermittelt…</string>
     <string name="action_navigate_up">Nach oben</string>
     <string name="pref_not_set">Nicht festgelegt</string>
+
+    <!-- Android Auto -->
+    <string name="car_sharing_until">Geteilt bis %s</string>
+    <string name="car_link">Link</string>
+    <string name="car_duration">Dauer</string>
+    <string name="car_duration_title">Freigabedauer</string>
+    <string name="car_server">Server</string>
+    <string name="car_server_none">Nicht eingerichtet</string>
+    <string name="car_err_server_not_configured">Richten Sie zuerst in Hauk auf Ihrem Telefon einen Backend-Server ein.</string>
+    <string name="car_err_missing_perms">Erlauben Sie Hauk zuerst auf Ihrem Telefon den Zugriff auf Ihren Standort.</string>
 </resources>

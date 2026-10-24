@@ -2,6 +2,7 @@ package info.varden.hauk.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -30,6 +31,7 @@ import info.varden.hauk.manager.SessionInitiationResponseHandler
 import info.varden.hauk.manager.SessionListener
 import info.varden.hauk.manager.SessionManager
 import info.varden.hauk.manager.ShareListener
+import info.varden.hauk.service.SharingState
 import info.varden.hauk.struct.Session
 import info.varden.hauk.struct.Share
 import info.varden.hauk.struct.ShareMode
@@ -76,6 +78,11 @@ class MainActivity : AppCompatActivity(), DialogHostOwner {
      */
     private lateinit var manager: SessionManager
 
+    /**
+     * Takes over shares that were started outside of this activity, e.g. from Android Auto.
+     */
+    private val sharingStateListener = SharingState.Listener { adoptExternalShare() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -94,18 +101,21 @@ class MainActivity : AppCompatActivity(), DialogHostOwner {
             }
         }
 
-        this.manager.resumeShares { ctx, session, shares, response ->
-            // Prompt the user to continue the session.
-            DialogService(ctx).showDialog(
-                R.string.resume_title,
-                String.format(ctx.getString(R.string.resume_body), shares.size, session.expiryString),
-                Buttons.Two.YES_NO,
-                ResumeDialogBuilder(response),
-            )
-        }
+        this.manager.resumeShares(::promptResume)
 
         // Check for aggressive power saving devices and warn the user if applicable.
         DeviceChecker(this).performCheck()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        SharingState.addListener(this.sharingStateListener)
+        adoptExternalShare()
+    }
+
+    override fun onStop() {
+        SharingState.removeListener(this.sharingStateListener)
+        super.onStop()
     }
 
     override fun onDestroy() {
@@ -116,8 +126,39 @@ class MainActivity : AppCompatActivity(), DialogHostOwner {
     override fun onResume() {
         super.onResume()
 
+        val prefs = PreferenceManager(this)
+
         // Set app logo visibility.
-        this.state.showLogo = !PreferenceManager(this).get(Constants.PREF_HIDE_LOGO)
+        this.state.showLogo = !prefs.get(Constants.PREF_HIDE_LOGO)
+
+        // The duration may have been changed from Android Auto.
+        if (!this.state.inputsLocked) {
+            this.state.duration = prefs.get(Constants.PREF_DURATION).toString()
+            this.state.durationUnit = prefs.get(Constants.PREF_DURATION_UNIT)
+        }
+    }
+
+    /**
+     * Prompts the user whether to continue a session that was found in storage.
+     */
+    private fun promptResume(ctx: Context, session: Session, shares: Array<Share>, response: PromptCallback) {
+        DialogService(ctx).showDialog(
+            R.string.resume_title,
+            String.format(ctx.getString(R.string.resume_body), shares.size, session.expiryString),
+            Buttons.Two.YES_NO,
+            ResumeDialogBuilder(response),
+        )
+    }
+
+    /**
+     * If a share is running that this activity's session manager does not know about, because it
+     * was started from Android Auto or a broadcast, relaunch it under this manager so that the UI
+     * shows it and it can be stopped from here.
+     */
+    private fun adoptExternalShare() {
+        if (SharingState.current == null || this.manager.isSessionActive) return
+        Log.i("Adopting share that was started outside of the main activity") //NON-NLS
+        this.manager.resumeShares(::promptResume)
     }
 
     /**

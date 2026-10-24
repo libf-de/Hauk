@@ -32,6 +32,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.activity:activity-compose:1.13.0'
+    implementation 'androidx.car.app:app:1.7.0'
 
     implementation platform('androidx.compose:compose-bom:2026.09.00')
     // Material 3 Expressive components are only available in the 1.5 alpha releases so far.

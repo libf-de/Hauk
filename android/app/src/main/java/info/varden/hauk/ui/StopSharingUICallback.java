@@ -3,6 +3,7 @@ package info.varden.hauk.ui;
 import android.content.Context;
 
 import info.varden.hauk.R;
+import info.varden.hauk.car.HaukCarAppService;
 import info.varden.hauk.dialog.DialogService;
 import info.varden.hauk.manager.StopSharingCallback;
 import info.varden.hauk.utils.Log;
@@ -52,6 +53,9 @@ final class StopSharingUICallback implements StopSharingCallback {
         if (this.activityExists) {
             this.resetTask.run();
             new DialogService(this.ctx).showDialog(R.string.ended_title, R.string.ended_message, this.resetTask);
+        } else if (HaukCarAppService.isCarSessionActive()) {
+            // Hauk is still shown on a car screen and must keep running.
+            Log.i("Main activity no longer exists, but Android Auto is connected; not exiting"); //NON-NLS
         } else {
             // If the main activity is already destroyed, there is no reason to keep the app
             // running.

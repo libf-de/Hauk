@@ -150,8 +150,10 @@ public final class LocationPushService extends Service {
                 SharingNotification notify = new SharingNotification(this, this.share, stopTask);
                 startForeground(notify.getID(), notify.create());
 
-                // Send status changes both to the parent handler and the notification.
-                this.gnssActiveTask = new MultiTargetGNSSHandlerProxy(parentHandler, notify);
+                // Send status changes to the parent handler, the notification and the
+                // process-wide sharing state (e.g. for Android Auto).
+                GNSSActiveHandler stateHandler = SharingState.publish(this, this.share, stopTask);
+                this.gnssActiveTask = new MultiTargetGNSSHandlerProxy(parentHandler, notify, stateHandler);
 
                 // Create and bind location listeners.
                 this.listenCoarse = new CoarseLocationListener();
@@ -196,6 +198,8 @@ public final class LocationPushService extends Service {
             this.navSource.stop();
             this.navSource = null;
         }
+
+        SharingState.clear(this);
 
         Log.i("Removing callbacks from handler %s", this.handler); //NON-NLS
         this.handler.removeCallbacksAndMessages(null);
