@@ -1313,11 +1313,11 @@ function formatDistance(meters) {
     return (value < 10 ? value.toFixed(1) : Math.round(value)) + " " + unit;
 }
 
-// Formats a remaining time in seconds, e.g. "14 min" or "1 h 5 min".
+// Formats a remaining time in seconds, e.g. "14min" or "1h 5min".
 function formatDuration(seconds) {
     var minutes = Math.max(0, Math.round(seconds / 60));
-    if (minutes < 60) return minutes + " min";
-    return Math.floor(minutes / 60) + " h " + (minutes % 60) + " min";
+    if (minutes < 60) return minutes + "min";
+    return Math.floor(minutes / 60) + "h " + (minutes % 60) + "min";
 }
 
 // Calculates the distance between two points on a sphere using the Haversine

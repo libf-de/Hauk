@@ -394,13 +394,13 @@ a:last-child > .store-icon {
 }
 
 #cockpit .label {
-    font-size: 10px;
+    font-size: 12px;
     color: white;
     margin: 0.5rem 0.7rem 0.1rem;
 }
 
 #cockpit .value {
-    font-size: small;
+    font-size: 14px;
     font-weight: bold;
     color: white;
     margin: 0 0.7rem 0.5rem;
