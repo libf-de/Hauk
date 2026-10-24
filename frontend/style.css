@@ -497,6 +497,23 @@ a:last-child > .store-icon {
     display: none;
 }
 
+/* A small expand icon in the top right corner of the thumbnail, hinting that
+   tapping it opens the stream in fullscreen. It is part of the button, so
+   taps on it open the stream as well. */
+#streams .stream-open::before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 0.35rem;
+    background: rgba(12, 12, 12, 0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'/%3E%3C/svg%3E") no-repeat center / 14px 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    opacity: 0.8;
+    pointer-events: none;
+}
+
 #streams .stream-close {
     display: none;
 }
@@ -516,7 +533,8 @@ a:last-child > .store-icon {
     z-index: 1;
 }
 
-#streams .stream.fullscreen .stream-name {
+#streams .stream.fullscreen .stream-name,
+#streams .stream.fullscreen .stream-open::before {
     display: none;
 }
 
