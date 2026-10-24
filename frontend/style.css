@@ -404,6 +404,7 @@ a:last-child > .store-icon {
     font-weight: bold;
     color: white;
     margin: 0 0.7rem 0.5rem;
+    text-align: end;
 }
 
 #cockpit .cockpitbox.name .value {
