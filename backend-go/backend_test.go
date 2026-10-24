@@ -314,6 +314,55 @@ func TestCameraStreams(t *testing.T) {
 	}
 }
 
+// Current clients send the cameras to cams.php, also before the first location.
+func TestCameraStreamsEndpoint(t *testing.T) {
+	ts := newTestServer(t, nil)
+	sid, shareID := ts.createSolo(nil)
+
+	expectLines(t, ts.post("/api/cams.php", url.Values{"sid": {sid}, "cams": {`[{"name":"Front","url":"https://cam.example/s/abc"},{"name":"Bad","url":"javascript:alert(1)"}]`}}), "OK")
+	_, data := ts.fetch("id=" + shareID)
+	cams, _ := json.Marshal(data["cams"])
+	if string(cams) != `{"iv":null,"list":[{"name":"Front","url":"https://cam.example/s/abc"}]}` || len(data["points"].([]any)) != 0 {
+		t.Errorf("unexpected cameras %s, points %v", cams, data["points"])
+	}
+
+	// An empty list clears the cameras.
+	expectLines(t, ts.post("/api/cams.php", url.Values{"sid": {sid}, "cams": {"[]"}}), "OK")
+	if _, data = ts.fetch("id=" + shareID); data["cams"] != nil {
+		t.Errorf("cameras should be cleared: %v", data["cams"])
+	}
+
+	// Oversized lists are ignored.
+	ts.post("/api/cams.php", url.Values{"sid": {sid}, "cams": {`[{"name":"Front","url":"https://cam.example/s/abc"}]`}})
+	ts.post("/api/cams.php", url.Values{"sid": {sid}, "cams": {"[" + strings.Repeat(" ", camsMaxLength) + "]"}})
+	if _, data = ts.fetch("id=" + shareID); data["cams"] == nil {
+		t.Errorf("oversized cameras should be ignored")
+	}
+
+	// Encrypted sessions need an IV.
+	esid, eshareID := ts.createSolo(url.Values{"e2e": {"1"}, "salt": {"c2FsdA=="}})
+	expectLines(t, ts.post("/api/cams.php", url.Values{"sid": {esid}, "cams": {"Y2Ftcw==\n"}}), "Missing data!")
+	expectLines(t, ts.post("/api/cams.php", url.Values{"sid": {esid}, "iv": {"aXY="}, "cams": {"Y2Ftcw==\n"}}), "OK")
+	_, data = ts.fetch("id=" + eshareID)
+	if ecams := data["cams"].(map[string]any); ecams["list"] != "Y2Ftcw==\n" || ecams["iv"] != "aXY=" {
+		t.Errorf("unexpected encrypted cameras %v", ecams)
+	}
+
+	expectLines(t, ts.post("/api/cams.php", url.Values{"sid": {"unknown"}, "cams": {"[]"}}), "Session expired!")
+}
+
+func TestCacheHeaders(t *testing.T) {
+	ts := newTestServer(t, nil)
+	for path, want := range map[string]string{
+		"/dynamic.js.php": "no-cache",
+		"/main.js":        "no-cache",
+	} {
+		if got := ts.do(httptest.NewRequest(http.MethodGet, path, nil)).Header().Get("Cache-Control"); got != want {
+			t.Errorf("%s: Cache-Control = %q, want %q", path, got, want)
+		}
+	}
+}
+
 func TestEncryptedShare(t *testing.T) {
 	ts := newTestServer(t, nil)
 	sid, shareID := ts.createSolo(url.Values{"e2e": {"1"}, "salt": {"c2FsdA=="}, "ado": {"1"}})

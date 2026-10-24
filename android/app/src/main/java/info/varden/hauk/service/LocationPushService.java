@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import info.varden.hauk.Constants;
+import info.varden.hauk.http.CameraStreamsPacket;
 import info.varden.hauk.http.LocationUpdatePacket;
 import info.varden.hauk.http.ServerException;
 import info.varden.hauk.http.parameter.LocationProvider;
@@ -113,10 +114,15 @@ public final class LocationPushService extends Service {
     private boolean navOnServer = false;
 
     /**
-     * The source of camera stream links to attach to a location update, or null if stream sharing
-     * is disabled or unavailable, or the links have already been sent to the backend.
+     * The source of the camera stream links that are sent to the backend periodically, or null if
+     * stream sharing is disabled or unavailable.
      */
     private RemoteCamStreamSource streamSource = null;
+
+    /**
+     * Handler on the main thread, which packets have to be sent from.
+     */
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate() {
@@ -167,11 +173,13 @@ public final class LocationPushService extends Service {
                     if (this.navSource != null) this.navSource.start();
                 }
 
-                // Attach camera stream links from RemoteCam to a location update if enabled. The
-                // links are not expected to change, so they are only sent once.
+                // Send camera stream links from RemoteCam to the backend if enabled, right away
+                // rather than with the first location update, and then periodically.
                 if (this.streamSource == null && new PreferenceManager(this).get(Constants.PREF_SHARE_STREAMS)) {
                     this.streamSource = RemoteCamStreamSource.create(this);
-                    if (this.streamSource != null) this.streamSource.load();
+                    if (this.streamSource != null) {
+                        this.streamSource.start(streams -> this.mainHandler.post(() -> sendStreams(streams)));
+                    }
                 }
 
             } else {
@@ -198,6 +206,13 @@ public final class LocationPushService extends Service {
             this.navSource.stop();
             this.navSource = null;
         }
+
+        if (this.streamSource != null) {
+            Log.i("Service %s destroyed; stopping camera stream source", this); //NON-NLS
+            this.streamSource.stop();
+            this.streamSource = null;
+        }
+        this.mainHandler.removeCallbacksAndMessages(null);
 
         SharingState.clear(this);
 
@@ -231,11 +246,26 @@ public final class LocationPushService extends Service {
             }
         }
 
-        // Camera stream links are sent with the first update after they have been loaded.
-        String streams = this.streamSource != null ? this.streamSource.getStreams() : null;
+        Log.v("Sending location update packet, nav=%s, sendRoute=%s", nav, sendRoute); //NON-NLS
+        new LocationUpdatePacketImpl(location, accuracy, nav, sendRoute).send();
+    }
 
-        Log.v("Sending location update packet, nav=%s, sendRoute=%s, sendStreams=%s", nav, sendRoute, streams != null); //NON-NLS
-        new LocationUpdatePacketImpl(location, accuracy, nav, sendRoute, streams).send();
+    /**
+     * Sends the camera stream links to the backend. They are sent periodically, even if they have
+     * not changed, so that a failed request is made up for by the next one.
+     *
+     * @param streams The camera stream links as a JSON array.
+     */
+    private void sendStreams(String streams) {
+        if (this.share == null) return;
+        Log.v("Sending camera stream links packet"); //NON-NLS
+        new CameraStreamsPacket(this, this.share.getSession(), streams) {
+            @Override
+            protected void onFailure(Exception ex) {
+                // Connection loss is reported by the location updates.
+                Log.w("Failed to push camera stream links to server", ex); //NON-NLS
+            }
+        }.send();
     }
 
     @Nullable
@@ -368,13 +398,11 @@ public final class LocationPushService extends Service {
     private final class LocationUpdatePacketImpl extends LocationUpdatePacket {
         private final NavigationSnapshot nav;
         private final boolean sendRoute;
-        private final boolean sendStreams;
 
-        private LocationUpdatePacketImpl(Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute, @Nullable String streams) {
-            super(LocationPushService.this, LocationPushService.this.share.getSession(), location, accuracy, nav, sendRoute, streams);
+        private LocationUpdatePacketImpl(Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute) {
+            super(LocationPushService.this, LocationPushService.this.share.getSession(), location, accuracy, nav, sendRoute);
             this.nav = nav;
             this.sendRoute = sendRoute;
-            this.sendStreams = streams != null;
         }
 
         @Override
@@ -401,9 +429,6 @@ public final class LocationPushService extends Service {
                 LocationPushService.this.navOnServer = false;
                 LocationPushService.this.uploadedRouteId = 0;
             }
-
-            // The camera stream links only have to be sent once.
-            if (this.sendStreams) LocationPushService.this.streamSource = null;
         }
 
         @Override

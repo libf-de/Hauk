@@ -91,6 +91,7 @@ func (b *Backend) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/create.php", b.api(b.handleCreate))
 	mux.HandleFunc("/api/post.php", b.api(b.handlePost))
+	mux.HandleFunc("/api/cams.php", b.api(b.handleCams))
 	mux.HandleFunc("/api/fetch.php", b.api(b.handleFetch))
 	mux.HandleFunc("/api/stop.php", b.api(b.handleStop))
 	mux.HandleFunc("/api/adopt.php", b.api(b.handleAdopt))
@@ -120,6 +121,8 @@ func frontendHandler(frontend fs.FS) http.Handler {
 				return
 			}
 		}
+		// Browsers must not use outdated copies of the frontend.
+		w.Header().Set("Cache-Control", "no-cache")
 		files.ServeHTTP(w, r)
 	})
 }
@@ -296,8 +299,57 @@ func parseCams(data string) []Camera {
 	return out
 }
 
+// storeCams stores the camera stream links sent by a client. iv is the IV the
+// links were encrypted with for end-to-end encrypted sessions, or nil, in which
+// case the links are validated. Oversized lists are ignored.
+func storeCams(session *Session, cams string, iv *string) {
+	if len(cams) > camsMaxLength {
+		return
+	}
+	if iv != nil {
+		session.SetCams(cams, iv)
+	} else if list := parseCams(cams); len(list) > 0 {
+		session.SetCams(list, nil)
+	} else {
+		session.ClearCams()
+	}
+}
+
+// handleCams stores the camera stream links of a session. Clients send them
+// periodically and independently of location updates, so that they arrive
+// even before the first location is known.
+func (b *Backend) handleCams(c *ctx) {
+	if !c.requirePOST("sid", "cams") {
+		return
+	}
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	sid, _ := c.post("sid")
+	session := b.GetSession(sid)
+	if session == nil {
+		c.write(c.lang.T("session_expired") + "\n")
+		return
+	}
+
+	cams, _ := c.post("cams")
+	if session.IsEncrypted() {
+		if !c.requirePOST("iv") {
+			return
+		}
+		iv, _ := c.post("iv")
+		storeCams(session, cams, &iv)
+	} else {
+		storeCams(session, cams, nil)
+	}
+	b.SaveSession(session)
+	c.write("OK\n")
+}
+
 // handlePost stores a location update, and optionally navigation data and
-// camera stream links.
+// camera stream links. Camera stream links are sent to handleCams by current
+// clients, but still accepted here from older ones.
 func (b *Backend) handlePost(c *ctx) {
 	if !c.requirePOST("lat", "lon", "time", "sid") {
 		return
@@ -321,7 +373,6 @@ func (b *Backend) handlePost(c *ctx) {
 	eta, hasETA := c.post("neta")
 	dist, hasDist := c.post("ndst")
 	cams, hasCams := c.post("cams")
-	hasCams = hasCams && len(cams) <= camsMaxLength
 
 	if !session.IsEncrypted() {
 		lat := phpFloatval(latStr)
@@ -355,11 +406,7 @@ func (b *Backend) handlePost(c *ctx) {
 			b.SetNavProgress(session, phpFloatval(eta), max(0, phpFloatval(dist)), nil)
 		}
 		if hasCams {
-			if list := parseCams(cams); len(list) > 0 {
-				session.SetCams(list, nil)
-			} else {
-				session.ClearCams()
-			}
+			storeCams(session, cams, nil)
 		}
 	} else {
 		// Input validation cannot be performed for end-to-end encrypted data.
@@ -383,7 +430,7 @@ func (b *Backend) handlePost(c *ctx) {
 			b.SetNavProgress(session, eta, dist, &iv)
 		}
 		if hasCams {
-			session.SetCams(cams, &iv)
+			storeCams(session, cams, &iv)
 		}
 	}
 
@@ -623,5 +670,6 @@ func (b *Backend) handleDynamicJS(w http.ResponseWriter, r *http.Request) {
 		sb.WriteString("var " + v.name + " = " + string(value) + ";\n")
 	}
 	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write([]byte(sb.String()))
 }

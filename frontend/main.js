@@ -1089,6 +1089,10 @@ var streamTiles = {};
 // The tile that is currently shown in fullscreen, or null.
 var fullscreenTile = null;
 
+// The camera streams currently on screen, to skip updates that change nothing.
+// The phone sends its cameras periodically, so most updates are unchanged.
+var shownStreams = null;
+
 // Adds, updates and removes the tiles of the camera streams. cams maps the
 // nickname of each user to their camera data from the server. Existing tiles
 // are never moved or recreated, since that would reload their stream.
@@ -1106,6 +1110,10 @@ function updateStreams(cams, multiUser) {
             wanted.push({key: user + "\n" + list[i].url, url: list[i].url, name: name});
         }
     }
+
+    var signature = JSON.stringify(wanted);
+    if (signature === shownStreams) return;
+    shownStreams = signature;
 
     var keep = {};
     for (var i = 0; i < wanted.length; i++) keep[wanted[i].key] = true;

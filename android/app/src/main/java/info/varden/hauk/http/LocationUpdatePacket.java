@@ -51,9 +51,8 @@ public abstract class LocationUpdatePacket extends Packet {
      * @param sendRoute Whether or not to include the route geometry of an active navigation
      *                  snapshot. Should only be true if the route has changed since it was last
      *                  sent successfully.
-     * @param streams  The camera stream links to attach as a JSON array, or null to not send any.
      */
-    protected LocationUpdatePacket(Context ctx, Session session, Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute, @Nullable String streams) {
+    protected LocationUpdatePacket(Context ctx, Session session, Location location, LocationProvider accuracy, @Nullable NavigationSnapshot nav, boolean sendRoute) {
         super(ctx, session.getServerURL(), session.getConnectionParameters(), Constants.URL_PATH_POST_LOCATION);
         setParameter(Constants.PACKET_PARAM_SESSION_ID, session.getID());
 
@@ -76,9 +75,6 @@ public abstract class LocationUpdatePacket extends Packet {
             } else if (nav != null) {
                 setParameter(Constants.PACKET_PARAM_NAV_END, "1");
             }
-
-            // Camera stream links, if any:
-            if (streams != null) setParameter(Constants.PACKET_PARAM_CAMERA_STREAMS, streams);
         } else {
             // We're using end-to-end encryption - generate an IV and encrypt all parameters.
             try {
@@ -105,9 +101,6 @@ public abstract class LocationUpdatePacket extends Packet {
                 } else if (nav != null) {
                     setParameter(Constants.PACKET_PARAM_NAV_END, "1");
                 }
-
-                // Camera stream links, if any:
-                if (streams != null) setParameter(Constants.PACKET_PARAM_CAMERA_STREAMS, Base64.encodeToString(cipher.doFinal(streams.getBytes(StandardCharsets.UTF_8)), Base64.DEFAULT));
             } catch (Exception e) {
                 Log.e("Error was thrown when encrypting location data", e); //NON-NLS
             }

@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,13 +19,15 @@ import java.util.List;
 
 import info.varden.hauk.Constants;
 import info.varden.hauk.utils.Log;
+import info.varden.hauk.utils.TimeUtils;
 
 /**
  * Reads the public live stream links of the cameras of the RemoteCam account the RemoteCam app on
  * this phone is logged in to, through its StreamLinksProvider.
  *
- * <p>The links are not expected to change while sharing, so they are only read once, when
- * {@link #load()} is called.</p>
+ * <p>The links are read when {@link #start(Listener)} is called and then every
+ * {@link #UPDATE_INTERVAL_MILLIS} milliseconds, so that cameras that are added or removed, or links
+ * that could not be fetched by RemoteCam at first, reach the viewers while sharing.</p>
  */
 public final class RemoteCamStreamSource {
     private static final String AUTHORITY_SUFFIX = ".provider.streams";
@@ -37,6 +41,11 @@ public final class RemoteCamStreamSource {
     private static final String[] LINKS_PROJECTION = {COLUMN_CAMERA_NAME, COLUMN_URL};
 
     /**
+     * How often the stream links are read and reported to the listener: every 10 seconds.
+     */
+    private static final long UPDATE_INTERVAL_MILLIS = 10 * TimeUtils.MILLIS_PER_SECOND;
+
+    /**
      * Keys of the camera objects in the JSON array sent to the backend.
      */
     private static final String JSON_NAME = "name";
@@ -47,20 +56,46 @@ public final class RemoteCamStreamSource {
      */
     private final Context ctx;
 
+    /**
+     * The URI of the stream links. RemoteCam answers it from its cache, and fetches the links from
+     * its server in the background if they are older than 15 seconds.
+     */
     private final Uri linksUri;
 
     /**
-     * The stream links as a JSON array, or null if they have not been loaded (yet).
+     * The URI of the stream links that makes RemoteCam fetch them from its server first. Used for
+     * the first query, so that sharing starts with current links.
+     */
+    private final Uri refreshLinksUri;
+
+    /**
+     * The thread on which the stream links are queried, or null if the source is stopped.
      */
     @Nullable
-    private volatile String streams = null;
+    private HandlerThread thread = null;
 
     private RemoteCamStreamSource(Context ctx, String packageName) {
         this.ctx = ctx.getApplicationContext();
         this.linksUri = Uri.parse("content://" + packageName + AUTHORITY_SUFFIX).buildUpon() //NON-NLS
                 .appendPath(PATH_LINKS)
+                .build();
+        this.refreshLinksUri = this.linksUri.buildUpon()
                 .appendQueryParameter(PARAM_REFRESH, "1")
                 .build();
+    }
+
+    /**
+     * Receives the stream links read from RemoteCam.
+     */
+    @FunctionalInterface
+    public interface Listener {
+        /**
+         * Called on a background thread whenever the stream links have been read.
+         *
+         * @param streams The stream links as a JSON array of objects with the camera name and the
+         *                URL of its stream page.
+         */
+        void onStreamsRead(@NonNull String streams);
     }
 
     /**
@@ -110,31 +145,51 @@ public final class RemoteCamStreamSource {
     }
 
     /**
-     * Loads the stream links in the background. RemoteCam fetches them from its server first, which
-     * can take a few seconds.
+     * Starts reading the stream links in the background, right away and then periodically.
+     * RemoteCam fetches them from its server for the first read, which can take a few seconds.
+     *
+     * @param listener The listener that receives the stream links.
      */
-    public void load() {
-        new Thread(this::query, "RemoteCamStreamSource").start(); //NON-NLS
+    public void start(Listener listener) {
+        this.thread = new HandlerThread("RemoteCamStreamSource"); //NON-NLS
+        this.thread.start();
+        Handler handler = new Handler(this.thread.getLooper());
+        handler.post(new Runnable() {
+            private boolean refresh = true;
+
+            @Override
+            public void run() {
+                String streams = query(this.refresh ? RemoteCamStreamSource.this.refreshLinksUri : RemoteCamStreamSource.this.linksUri);
+                this.refresh = false;
+                if (streams != null) listener.onStreamsRead(streams);
+                handler.postDelayed(this, UPDATE_INTERVAL_MILLIS);
+            }
+        });
     }
 
     /**
-     * Returns the stream links as a JSON array of objects with the camera name and the URL of its
-     * stream page, or null if they have not been loaded (yet). Safe to call from any thread.
+     * Stops reading the stream links.
      */
-    @Nullable
-    public String getStreams() {
-        return this.streams;
+    public void stop() {
+        if (this.thread != null) {
+            this.thread.quitSafely();
+            this.thread = null;
+        }
     }
 
     /**
      * Queries the stream links. Runs on a background thread.
+     *
+     * @param uri The URI of the stream links to query.
+     * @return The stream links as a JSON array, or null if they could not be read.
      */
-    private void query() {
+    @Nullable
+    private String query(Uri uri) {
         JSONArray result = new JSONArray();
-        try (Cursor cursor = this.ctx.getContentResolver().query(this.linksUri, LINKS_PROJECTION, null, null, null)) {
+        try (Cursor cursor = this.ctx.getContentResolver().query(uri, LINKS_PROJECTION, null, null, null)) {
             if (cursor == null) {
                 Log.w("RemoteCam stream links are not available"); //NON-NLS
-                return;
+                return null;
             }
             int nameIndex = cursor.getColumnIndexOrThrow(COLUMN_CAMERA_NAME);
             int urlIndex = cursor.getColumnIndexOrThrow(COLUMN_URL);
@@ -147,10 +202,10 @@ public final class RemoteCamStreamSource {
         } catch (RuntimeException | JSONException ex) {
             // Thrown e.g. if the permission was revoked or RemoteCam was uninstalled.
             Log.w("Failed to query RemoteCam stream links", ex); //NON-NLS
-            return;
+            return null;
         }
         // The links are capability URLs and are deliberately not logged.
-        Log.i("Loaded %s RemoteCam stream links", result.length()); //NON-NLS
-        this.streams = result.toString();
+        Log.v("Read %s RemoteCam stream links", result.length()); //NON-NLS
+        return result.toString();
     }
 }
