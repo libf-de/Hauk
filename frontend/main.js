@@ -964,6 +964,13 @@ function decryptNav(nav) {
 
 var cockpitE = document.getElementById("cockpit");
 
+// Whether the cockpit shows the remaining time instead of the remaining
+// distance. They take turns every REMAINING_SWAP_INTERVAL milliseconds, or
+// when the box is tapped.
+var REMAINING_SWAP_INTERVAL = 10000;
+var cockpitShowsTime = false;
+var remainingSwapIntv = setInterval(swapRemaining, REMAINING_SWAP_INTERVAL);
+
 // Flags marking the start and the destination of a navigation route. The
 // anchor is at the bottom of the flag pole.
 var START_FLAG_ICON = L.icon({iconUrl: "./assets/markers/flag-start.svg", iconSize: [28, 32], iconAnchor: [4, 31]});
@@ -1000,7 +1007,11 @@ function updateNav(user, nav, serverTime, multiUser) {
     var eta = nav.eta !== null ? new Date(nav.eta * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : null;
     setCockpitValue(share.cockpit.name, multiUser ? user : null);
     setCockpitValue(share.cockpit.eta, eta);
-    setCockpitValue(share.cockpit.dist, nav.dist !== null ? formatDistance(nav.dist) : null);
+    setRemaining(
+        share.cockpit.remaining,
+        nav.dist !== null ? formatDistance(nav.dist) : null,
+        nav.eta !== null ? formatDuration(nav.eta - serverTime) : null
+    );
     if (cockpitE !== null && share.cockpit.row.parentNode !== cockpitE) {
         cockpitE.appendChild(share.cockpit.row);
     }
@@ -1021,7 +1032,7 @@ function drawRoute(points) {
 }
 
 // Creates a row for the cockpit with boxes for the nickname, ETA and remaining
-// distance of a user.
+// distance and time of a user.
 function createCockpitRow() {
     var rowE = document.createElement("div");
     rowE.className = "cockpit-row";
@@ -1042,18 +1053,59 @@ function createCockpitRow() {
         rowE.appendChild(boxE);
         return {box: boxE, value: valueE};
     };
-    return {
-        row: rowE,
-        name: createBox(null),
-        eta: createBox(LANG["nav_eta"]),
-        dist: createBox(LANG["nav_remaining"])
-    };
+    var name = createBox(null);
+    var eta = createBox(LANG["nav_eta"]);
+
+    // The remaining distance and time are stacked on top of each other, so
+    // that the box keeps the width of the wider one while they take turns.
+    var remaining = createBox(LANG["nav_remaining"]);
+    remaining.box.className += " remaining";
+    remaining.dist = document.createElement("span");
+    remaining.dist.className = "dist";
+    remaining.time = document.createElement("span");
+    remaining.time.className = "time";
+    remaining.value.appendChild(remaining.dist);
+    remaining.value.appendChild(remaining.time);
+    remaining.box.addEventListener("click", function() {
+        // Restart the interval so that the next swap doesn't follow right away.
+        clearInterval(remainingSwapIntv);
+        remainingSwapIntv = setInterval(swapRemaining, REMAINING_SWAP_INTERVAL);
+        swapRemaining();
+    });
+
+    return {row: rowE, name: name, eta: eta, remaining: remaining};
 }
 
 // Sets the value of a cockpit box, or hides the box if the value is null.
 function setCockpitValue(field, text) {
     field.value.textContent = text !== null ? text : "";
     field.box.className = field.box.className.split(" hidden").join("") + (text === null ? " hidden" : "");
+}
+
+// Sets the remaining distance and time of a cockpit box. The box is hidden if
+// both are null, and shows the other one if only one of them is null.
+function setRemaining(field, dist, time) {
+    field.dist.textContent = dist !== null ? dist : "";
+    field.time.textContent = time !== null ? time : "";
+    field.box.className = field.box.className.split(" hidden").join("") + (dist === null && time === null ? " hidden" : "");
+    showRemaining(field);
+}
+
+// Shows the remaining distance or time in a cockpit box, depending on which
+// one is due and which ones are known.
+function showRemaining(field) {
+    var showTime = field.time.textContent !== "" && (cockpitShowsTime || field.dist.textContent === "");
+    field.box.className = field.box.className.split(" show-time").join("") + (showTime ? " show-time" : "");
+}
+
+// Swaps between the remaining distance and time in the cockpit boxes of all
+// users.
+function swapRemaining() {
+    cockpitShowsTime = !cockpitShowsTime;
+    for (var user in shares) {
+        if (!shares.hasOwnProperty(user) || shares[user].cockpit === null) continue;
+        showRemaining(shares[user].cockpit.remaining);
+    }
 }
 
 // Removes the cockpit row of a user from the screen.
@@ -1259,6 +1311,13 @@ function formatDistance(meters) {
         unit = "km";
     }
     return (value < 10 ? value.toFixed(1) : Math.round(value)) + " " + unit;
+}
+
+// Formats a remaining time in seconds, e.g. "14 min" or "1 h 5 min".
+function formatDuration(seconds) {
+    var minutes = Math.max(0, Math.round(seconds / 60));
+    if (minutes < 60) return minutes + " min";
+    return Math.floor(minutes / 60) + " h " + (minutes % 60) + " min";
 }
 
 // Calculates the distance between two points on a sphere using the Haversine

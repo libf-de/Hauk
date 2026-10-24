@@ -410,6 +410,34 @@ a:last-child > .store-icon {
     margin: 0.5rem 0.7rem;
 }
 
+/* The remaining distance and time take turns in the same box, which can be
+   tapped to swap them. Both are stacked in the same grid cell, so that the box
+   keeps the width of the wider one, and are crossfaded. */
+#cockpit .cockpitbox.remaining {
+    pointer-events: auto;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+#cockpit .remaining .value {
+    display: grid;
+}
+
+#cockpit .remaining .value span {
+    grid-area: 1 / 1;
+    transition: opacity 0.6s ease-in-out;
+}
+
+#cockpit .remaining .value .time,
+#cockpit .remaining.show-time .value .dist {
+    opacity: 0;
+}
+
+#cockpit .remaining.show-time .value .time {
+    opacity: 1;
+}
+
 /* The strip of camera streams at the bottom of the screen. It covers the Hauk
    logo and the Leaflet attribution, and scrolls horizontally if the streams
    don't fit. */
